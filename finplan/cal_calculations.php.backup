@@ -1,0 +1,2964 @@
+<?php
+	include("./includes/common.php");
+	require_once(INCLUDE_PATH."Data.class.php");
+	require_once(INCLUDE_PATH."/Config.class.php");
+	require_once(INCLUDE_PATH."/CaseStudy.class.php");
+	include(DOC_ROOT_PATH."general.php");
+
+
+
+	//******* Cal Inflation ********************************//
+
+	$add = new Data($caseStudyId,$adxml);
+	$ajd = new Data($caseStudyId,$ajxml);
+
+	$in_cajData = $ajd->getByField('1','sid'); //get Data for the id
+	$in_startyear = $ahData['startYear']; // set value of start year to variable
+	$in_LIX[$in_startyear-1]=1; // set start year inflation index to 1
+
+	$in_Data['sid']=1; // set the sid to 1 for storing infl index
+	for($in_c = 0; $in_c < count($allChunks); $in_c++){// loop to get each currency id
+		$in_CX = $allChunks[$in_c];// get currency id
+		$in_rtype = 'RateType'.$in_CX;
+		$in_inftype = $in_cajData[$in_rtype];// get the inflation type given by user
+		for($in_i=$in_startyear;$in_i <= $ahData['endYear']; $in_i++){
+			if($in_inftype =="SR"){ //if steady change
+				$in_VX = 'SteadyInf_'.$in_CX;
+				$in_LIF[$in_i] = $in_cajData[$in_VX];
+				$in_CY = $in_CX.'_'.$in_i;
+			}elseif($in_inftype =="YR"){ // if Year rate change
+				$in_CY = $in_CX.'_'.$in_i;
+				if($in_cajData[$in_CY] ==''){
+					$in_LIF[$in_i] = $in_LIF[$in_i-1] ;
+				}else{
+					$in_LIF[$in_i] = $in_cajData[$in_CY];
+				}
+
+			}
+			$in_LIX[$in_i] = $in_LIX[$in_i-1] * (1 + $in_LIF[$in_i] / 100);
+
+			$in_INF = 'I_'.$in_CY;
+			$in_Data[$in_INF]=$in_LIF[$in_i];
+			$in_Data[$in_CY]=$in_LIX[$in_i];
+		}
+	}
+	$add->add($in_Data);
+
+	// ***** Calculate Exchange***********//
+
+	$aid = new Data($caseStudyId,$aixml);
+	$acd = new Data($caseStudyId,$acxml);
+
+	$caiData = $add->getByField('1','sid');//get inflation index
+	$ex_cbData = $aid->getByField('1','sid');//get exchange Data for this id
+
+	for($c = 0; $c < count($allChunks); $c++){
+		$ex_CX = $allChunks[$c];
+		$ex_rtype = 'RateType'.$ex_CX;
+		$ex_Data['sid'] = 1;
+		$ex_inftype = $ex_cbData[$ex_rtype];// get inflation type for this currency
+		$ex_strtval = $ex_CX.'_'.$ahData['startYear'];
+		$ex_startcurr = $ex_cbData[$ex_strtval]; // get inflation value for this currency for start year
+		$ex_prevyear = $ahData['startYear']-1;
+		if($ex_CX == $baseCurr){
+			$ex_Data[$ex_CX.'_'.$ex_prevyear] = 1;
+		}else{
+			$ex_Data[$ex_CX.'_'.$ex_prevyear] = $ex_cbData[$ex_CX.'_'.$ex_prevyear];
+		}
+		for($i=$ahData['startYear'];$i <= $ahData['endYear']; $i++){
+			$ex_CY = $ex_CX.'_'.$i;
+			if($ex_CX == $baseCurr){
+				$ex_LIX[$i] = 1;
+			}else{
+				if($ex_inftype == "SR"){ // If inflation type = steady
+					$ex_FCV = 'YearlyRate'.$ex_CX;
+					$ex_LIF[$i] = $ex_cbData[$ex_FCV];// get steady change rate
+					$ex_LIX[$i] = $ex_LIX[$i-1]+($ex_LIX[$i-1]*$ex_cbData[$ex_FCV]/100);//assign steady change rate
+				}elseif($ex_inftype == "YR"){ // If inflation type = yearly
+
+					if($ex_cbData[$ex_CY] ==''){ //if not given for this year get value from previous year
+						$ex_LIF[$i] = $ex_LIF[$i-1] ;
+					}else{
+						$ex_LIF[$i] = $ex_cbData[$ex_CY];//for this year get value from stored values in xml
+					}
+					$ex_LIX[$i] = $ex_LIF[$i];
+				}elseif($ex_inftype == "II"){ // If inflation type = inflation index
+
+					$ex_BC = $baseCurr.'_'.$i;
+					$ex_locindx = $caiData['I_'.$ex_BC];//get inflation index for base currency for this year
+					$ex_forindx = $caiData['I_'.$ex_CY];//get inflation index for this currency for this year
+					$ex_LIX[$ahData['startYear']-1] = $ex_startcurr;// set start year -1 = first year value
+					$ex_LIX[$i] = $ex_LIX[$i-1] * (1+(($ex_locindx/100) - ($ex_forindx/100)));// exchange index (i-1) * (1+(loc Infl indx - for infl indx)
+				}
+				$ex_LIX[$ahData['startYear']]=$ex_startcurr;	// start year is assigned the value of 1st year given by user input
+			}
+		$ex_Data[$ex_CY]=$ex_LIX[$i];
+		}
+	}
+	$acd->add($ex_Data);
+
+
+	$atd = new Data($caseStudyId,$atxml);
+	$aad = new Data($caseStudyId,$aaxml);
+
+
+	// ****** Cal Investment *********//2.2.7.	Investment module
+
+	$aed = new Data($caseStudyId,$aexml);
+	$and = new Data($caseStudyId,$anxml);
+
+
+	$plant_Data = $apd->getall();// get Data for all plant s
+	$inv_cpData = $plant_Data;
+	$inv_infData = $caiData;// get Data for inflation index
+	$inv_excData = $acd->getByField('1','sid');
+
+	if(is_array($inv_cpData) && count($inv_cpData) > 0){ // check if plants exist
+		foreach($inv_cpData as $inv_row){
+			$inv_idData = $and->getByField($inv_row['id'],'pid');// get investment Data for each plant
+			$inv_Data = '';//clear Data if any
+			$inv_pid = $inv_row['id'];
+			$inv_Data['pid'] = $inv_pid;// set pid equal to id of this plant id
+			$inv_Data['PW_'.$inv_pid] = 0;
+			for($inv_c = 0; $inv_c < count($allChunks); $inv_c++){// For each currency
+				$inv_CX = $allChunks[$inv_c];
+				$inv_tot = 'Tot_'.$inv_CX;
+				$inv_total = $inv_idData[$inv_tot];//get total investment for this plant
+				$inv_cYear = $inv_row['FOyear']-$inv_row['CPeriod'];	//1st construction year  = 1st oper year- construction period
+				for($inv_i=1;$inv_i <= $inv_row['CPeriod']; $inv_i++){ // for number of construction years
+					$inv_CY = $inv_CX.'_'.$inv_i;
+					$inv_IX = $inv_CX.'_'.$inv_cYear;
+					$inv_Inv = $inv_total * $inv_idData[$inv_CY]/100;// investment = total investment for this currency * percentage for this year (  CInvest_Costs(plant name, currency name)�Invest_Cost_Dist(plant name, currency name,j )  )
+					// Current_Invest_Costs (plant name, currency name,j) = CInvest_Costs(plant name, currency name)�Invest_Cost_Dist(plant name, currency name,j) �Inf_index(currency name,j).
+					$inv_EInv = $inv_Inv;// * $inv_infData[$inv_IX];
+					//   $inv_EInv_dp variable was added to correct the calcualtions for depreciation, Irej 29 July
+					$inv_EInv_dp = $inv_Inv * $inv_infData[$inv_IX];
+					 //$inv_in = 'I_'.$inv_CY;// commented as this investment was without inflation
+					 //$inv_Data[$inv_in]= $inv_Inv;
+
+					$inv_ein = 'EI_'.$inv_IX;//Current_Invest_Costs(plant name, currency name,j)
+					$inv_Data[$inv_ein]= $inv_EInv;
+					if($inv_CX == $baseCurr){
+					//  $inv_excinvst[$inv_i] = $inv_EInv/* * $inv_excData[$inv_IX]*/;
+					//}else{
+					//	$inv_excinvst[$inv_i] = $inv_EInv * $inv_excData[$inv_IX];
+						$inv_excinvst[$inv_i] = $inv_EInv_dp/* * $inv_excData[$inv_IX]*/;  //added july 29
+					}else{
+						$inv_excinvst[$inv_i] = $inv_EInv_dp * $inv_excData[$inv_IX];  // added july 29
+					}
+
+					$inv_Data['C_'.$inv_i] = $inv_Data['C_'.$inv_i] + $inv_excinvst[$inv_i];//Current_Invest_Costs_LC(p,k)
+					$inv_cYear++;
+					$inv_pws['PW_'.$inv_pid] = $inv_pws['PW_'.$inv_pid] + $inv_excinvst[$inv_i];
+
+				}
+				$inv_Data['PW_'.$inv_pid] = $inv_pws['PW_'.$inv_pid];
+
+			}
+			$aed->add($inv_Data);
+		}
+	}
+
+	// *********** Cal VAT *********/
+
+	$cmd = new Data($caseStudyId,$cmxml);
+
+	$vat_cpData = $plant_Data;// get Data for all plant s
+	$vat_atData = $atd->getByField('1','sid');
+	$vat_rateinv = $vat_atData['VATRateInvestment'];
+	$vat_coverinv = $vat_atData['VAT_Cover_Inv'];
+
+	foreach($vat_cpData as $vat_row){
+		$vat_aeData = $aed->getByField($vat_row['id'],'pid');// get investment Data for each plant
+		$vat_Data = '';//clear Data if any
+		$vat_pid = $vat_row['id'];
+		$vat_fYear = $vat_row['FOyear'];	// 1st oper year
+		$vat_cYear = $vat_row['FOyear']-$vat_row['CPeriod'];
+		for($vat_i=1;$vat_i <= $vat_row['CPeriod']; $vat_i++){ // for number of construction years
+			$vat_IX = 'C_'.$vat_i;
+			//VAT_Inv_LC(p,j) = VAT_Rate_Inv/100 � VAT_Cover_Inv/100 �  Current_Invest_Costs_LC(p,k)
+			$vat_Data['I_'.$vat_pid.'_'.$vat_i] = $vat_rateinv/100 * $vat_coverinv/100 * $vat_aeData[$vat_IX] ;
+
+			$vat_Data['TI_'.$vat_cYear] = $vat_Data['TI_'.$vat_cYear] + $vat_Data['I_'.$vat_pid.'_'.$vat_i]; //Tot_VAT_Inv_LC(j)
+
+			$vat_Data['T_'.$vat_pid.'_'.$vat_fYear] = $vat_Data['T_'.$vat_pid.'_'.$vat_fYear] + $vat_Data['I_'.$vat_pid.'_'.$vat_i];//VAT_Inv_TBR_LC(p,k)
+			$vat_cYear++;
+		}
+		$vat_Data['T_'.$vat_fYear] = $vat_Data['T_'.$vat_fYear] + $vat_Data['T_'.$vat_pid.'_'.$vat_fYear];
+	}
+	for($vat_j=$ahData['startYear'];$vat_j <= $ahData['endYear']; $vat_j++){
+		//Tot_VAT_Inv_TBR_LC(j) = Tot_VAT_Inv_LC(j) -VAT_Inv_TBR_LC(j)
+		$vat_Data['TT_'.$vat_j] = $vat_Data['TI_'.$vat_j] - $vat_Data['T_'.$vat_j];
+	}
+	$vat_Data['sid'] = 1;
+	$cmd->add($vat_Data);
+
+
+	// *********** Cal Total Investment & committed Investment *********//2.2.7.	Investment module
+
+	$agd = new Data($caseStudyId,$agxml);
+	$brd = new Data($caseStudyId,$brxml);
+
+	$tin_cpData = $plant_Data;// get Data for all plant s
+	$tin_caData = $aed->getall();// get Data for Investments
+	$tin_infData = $caiData;// get Data for inflation index
+	$tin_brData = $brd->getByField('1','sid');// get Data for committed investment
+	$tin_excData = $inv_excData;// get exch Data
+
+
+		$tin_Data['sid'] = 1;// setting unique id for storing Data
+		for($tin_i=$ahData['startYear'];$tin_i <= $ahData['endYear']; $tin_i++){
+			$tin_ii = $tin_i-1;
+			for($tin_c = 0; $tin_c < count($allChunks); $tin_c++){
+				$tin_CX = $allChunks[$tin_c];
+				$tin_CY = $tin_CX.'_'.$tin_i;
+				$tin_TI = 'EI_'.$tin_CY;//Esclated/Current Investment
+				$tin_CI = 'C_'.$tin_CY;// Committed investment
+				//				$tin_Data[$tin_CI] = $tin_brData[$tin_CI] * $tin_infData[$tin_CY];// Committed investment * inflation index
+
+				$tin_execomminvst[$tin_i] = $tin_brData[$tin_CI] * $tin_excData[$tin_CY];
+				$tin_Commit_Invest_Cost_LC['CL_'.$tin_i] = $tin_Commit_Invest_Cost_LC['CL_'.$tin_i] + $tin_execomminvst[$tin_i];// Total committed investment in local currency
+
+				foreach($tin_caData as $tin_row){// fetching investment for each year from investment file
+					$tin_pid = $tin_row['pid'];// plant id
+					$tin_Data[$tin_TI] = $tin_Data[$tin_TI] + $tin_row[$tin_TI];// adding in total(i) = investment for all plants(i)
+					$tin_pltData = $apd->getByField($tin_pid,'id'); // get plant data for this plant
+
+					$tin_exeinvst[$tin_i] = $tin_row[$tin_TI] * $tin_excData[$tin_CY] * $inv_infData[$tin_CY];// Total  investment X  exchange rate
+					$tin_Current_Invest_Costs['IL_'.$tin_pid.'_'.$tin_i] = $tin_Current_Invest_Costs['IL_'.$tin_pid.'_'.$tin_i] + $tin_exeinvst[$tin_i];
+
+				}
+			}
+			$tin_Data['CL_'.$tin_i] = $tin_Commit_Invest_Cost_LC['CL_'.$tin_i];// Tot_Commit_Invest_Cost_LC (j) ,
+
+		}
+		foreach($tin_cpData as $tin_row){
+			$tin_CP = $tin_CX.'_'.$tin_row['id'];
+			$tin_FOyear = $tin_row['FOyear']+1;// get values for FOyear
+			$tin_pid = $tin_row['id'];
+			for($tin_i=$ahData['startYear'];$tin_i <= $ahData['endYear']; $tin_i++){
+				$tin_ii = $tin_i-1;
+				$tin_iii = $tin_i+1;
+				$tin_Data['IL_'.$tin_i] = $tin_Data['IL_'.$tin_i] + $tin_Current_Invest_Costs['IL_'.$tin_pid.'_'.$tin_i];// Tot_New_Invest_Costs_LC(j)  ,Total new investment in local currency
+
+
+				if($tin_FOyear>$tin_iii){
+					$tin_Data['WPLP_'.$tin_pid.'_'.$tin_i] = $tin_Data['WPLP_'.$tin_pid.'_'.$tin_ii] + $tin_Current_Invest_Costs['IL_'.$tin_pid.'_'.$tin_i];// Work_inprog_LC_Plant(p,k)
+				}else{
+					$tin_Data['WPLP_'.$tin_pid.'_'.$tin_i] = 0 ;
+				}
+
+				$tin_Data['WPL_'.$tin_i] += $tin_Data['WPLP_'.$tin_pid.'_'.$tin_i];// Work_inprog_LC(j)
+				//				$tin_Data['WPL_'.$tin_i] = $tin_Data['WPL_'.$tin_i] + $tin_WPL['WPL_'.$tin_i];// Work_inprog_LC(j)
+
+			}
+
+		}
+		for($tin_i=$ahData['startYear'];$tin_i <= $ahData['endYear']; $tin_i++){
+
+			$tin_Data['GIL_'.$tin_i] = $tin_Data['CL_'.$tin_i] + $tin_Data['IL_'.$tin_i];// Global_Invest_LC(j)= Tot_New_Invest_Costs_LC(j)+ Tot_Commit_Invest_Costs_LC(j)
+
+		}
+		$agd->add($tin_Data);
+
+		// ****Depreciation of the existing and committed investments ***///////////
+
+
+		$dep_atData = $atd->getByField('1','sid');
+		$dep_aaData = $aad->getByField('1','sid');//balace Data
+		for($dep_i=$ahData['startYear'];$dep_i <= $ahData['endYear']; $dep_i++){
+			$dep_ii = $dep_i-1;
+			if($dep_i == $ahData['startYear']){
+				//Old_Net_Fixed_Asset(j) = Init_Gross_Fixed_Asset - Init_Cum_depreciation
+				$dep_Old_Net_Fixed_Asset[$dep_ii] = $dep_aaData['NetFxdAsst'];
+				//Dep_Comm_Fixed_Assets_LC(j)  =0
+				$dep_Dep_Commit_Fixed_Assets[$dep_i] = 0;
+				//Commit_Fixed_Asset(j) = Tot_Commit_Invest_Costs_LC(j) + Init_Work_inprog.
+				$dep_Commit_Fixed_Asset[$dep_i] = $tin_Data['CL_'.$dep_i] + $bs_aaData['WorkProgress'];
+				//Dep_Old_Fixed_Asset(j) = Old_Net_Fixed_Asset(j-1) � G_Dep_rate,
+				$dep_Dep_Old_Fixed_Asset[$dep_i] =  $dep_Old_Net_Fixed_Asset[$dep_ii] * $dep_atData['YearlyDepreciationRate']/100;
+				//Old_Net_Fixed_Asset(j) = Old_Net_Fixed_Asset(j-1) - Dep_Old_Fixed_Asset(j)
+				$dep_Old_Net_Fixed_Asset[$dep_i] = $dep_Old_Net_Fixed_Asset[$dep_ii] - $dep_Dep_Old_Fixed_Asset[$dep_i];
+
+			}else{
+				//Dep_Old_Fixed_Asset(j) = Old_Net_Fixed_Asset(j-1) � G_Dep_rate,
+				$dep_Dep_Old_Fixed_Asset[$dep_i] =  $dep_Old_Net_Fixed_Asset[$dep_ii] * $dep_atData['YearlyDepreciationRate']/100;
+				//Old_Net_Fixed_Asset(j) = Old_Net_Fixed_Asset(j-1) - Dep_Old_Fixed_Asset(j)
+				$dep_Old_Net_Fixed_Asset[$dep_i] = $dep_Old_Net_Fixed_Asset[$dep_ii] - $dep_Dep_Old_Fixed_Asset[$dep_i];
+				//Commit_Fixed_Asset(j) = Tot_Commit_Invest_Costs_LC(j) + Tot_Commit_Invest_Costs_LC(j-1)
+				$dep_Commit_Fixed_Asset[$dep_i] = $tin_Data['CL_'.$dep_i] + $tin_Data['CL_'.$dep_ii];
+				//Dep_Comm_Fixed_Assets_LC(j) = [Commit_Fixed_Asset(j-1) - Dep_Comm_Fixed_Assets_LC(j-1) ]� G_Dep_rate
+				$dep_Dep_Comm_Fixed_Assets_LC[$dep_i] =( $dep_Commit_Fixed_Asset[$dep_ii] - $dep_Dep_Comm_Fixed_Assets_LC[$dep_ii] ) * $dep_atData['YearlyDepreciationRate']/100;
+			}
+
+		}
+
+
+	//********* Cal Draw Down ********************//
+
+
+	$abd = new Data($caseStudyId,$abxml);
+	$asd = new Data($caseStudyId,$asxml);
+	$bpd = new Data($caseStudyId,$bpxml);
+
+	$dd_suData = $asd->getall();// get Data for finance sources
+
+	if(is_array($dd_suData) && count($dd_suData) > 0){// check if Data exist for this sources
+		foreach($dd_suData as $dd_row){
+			$dd_Data = '';//clear Data if any
+			$dd_fid = $dd_row['fid'];// get fid for the Data
+			$dd_fidChunks = explode("_", $dd_fid);// split the fid
+			$dd_Data['fid'] = $dd_fid;// set fid for storing Data
+			$dd_cid = $dd_fidChunks[0];// currency id
+			$dd_pid = $dd_fidChunks[1];// plant id
+			$dd_Data['pid'] = $dd_pid;// set pid for storing Data
+			$dd_cpData = $apd->getById($dd_pid);// get plant Data for pid
+			$dd_caData = $aed->getByField($dd_pid,'pid');// get investment Data for this plant
+
+			foreach($financeSources as $financesource){
+				$dd_cYear = $dd_cpData['FOyear']-$dd_cpData['CPeriod'];//calculating first construction year
+				$dd_totddval = 'Tot_'.$financesource['id'];
+				$dd_Data[$dd_totddval] = 0;//set total Data to 0 to intialize
+				for($dd_i=1;$dd_i <= $dd_cpData['CPeriod']; $dd_i++){
+					$dd_finfval = $financesource['id'].'_'.$dd_i;
+					$dd_finfval2 = $financesource['id'].'_'.$dd_cid.'_'.$dd_cYear;// this  has to be removed but first need to sort do I need to save by year or serial no
+					$dd_value = $dd_row[$dd_finfval]; // percentage of investment for this year for this finance type
+					$dd_invval = 'EI_'.$dd_cid.'_'.$dd_cYear;
+					$dd_eival = $dd_caData[$dd_invval];//esclated Investment for this year for this currency type
+					$dd_drawval = $dd_value/100 * $dd_eival;// drawdown = investment percent/100 * EsclatedInvestment (for each year)
+
+					$dd_Data[$dd_finfval] = $dd_drawval;	//DDown equation for each finance source per year
+					$dd_Data2[$dd_finfval2] = $dd_Data2[$dd_finfval2]+ $dd_drawval;// this  has to be removed but first need to sort do I need to save by year or serial no
+					$dd_Data[$dd_totddval] = $dd_Data[$dd_totddval] + $dd_drawval;//Total DDown equation for each finance source
+					$dd_cYear++;
+				}
+			}
+			$abd->add($dd_Data);
+		}
+		$dd_Data2['sid'] = 1;
+		$bpd->add($dd_Data2);
+	}
+
+	//********** Cal  Balance  for Export***********************
+    //UPDATE V.K. 20151105 IDC add and exclude financing sorces which are not included
+
+	require_once(INCLUDE_PATH."financial_class.php");
+
+	$aud = new Data($caseStudyId,$auxml);
+	$avd = new Data($caseStudyId,$avxml);
+	$bqd = new Data($caseStudyId,$bqxml);
+	$fpmt = new Financial;
+
+	$bal_cpData = $plant_Data;//get Data for all plants
+	$bal_infData = $caiData;  //get inflation data
+
+	if(is_array($bal_cpData) && count($bal_cpData) > 0) //Check if plant Data exists
+    {
+        foreach($bal_cpData as $bal_row)   //froeach plant
+        {
+			$bal_Data = ''; //intialise the Data set
+			$bal_pid = $bal_row['id'];// pass plant id value    [1]
+			$bal_Data['pid'] = $bal_pid;//assign pass plant id value to pid
+
+            for($bal_c = 0; $bal_c < count($CurChunks); $bal_c++)  // for each currency
+            {
+				$bal_fidval = $CurChunks[$bal_c].'_'.$bal_pid;//assign currency_pid to variable  [USD_1]
+				$bal_cdData = $abd->getByField($bal_fidval,'fid');// get all values from drawdown using fid field
+               	$bal_CX = $CurChunks[$bal_c];//USD
+
+				foreach($financeSources as $financesource){// for each finance source
+					if($financesource['type'] == 'E')
+                    {
+						$bal_FS = $financesource['id'];   //E1
+						$bal_cperiod = $bal_row['FOyear']-$bal_row['CPeriod'];//calculating first year of construction
+						$bal_repval = $bal_fidval.'_'.$bal_FS;// currency_pid_financeid   [USD_1_E1]
+						$bal_trmData = $aud->getByField($bal_repval,'fid');
+						$bal_graceval = 0;// extracting grace period for this finance source
+						//$bal_intval = $bal_trmData['InterestRate'];// extracting interest rate for this finance source
+						$bal_maturval = $bal_trmData['MaturityTime'];// extracting maturity time for this finance source
+						$bal_totalfinance = $bal_cdData['Tot_'.$bal_FS];//extract total  investment for this plant and finance source //210
+                        $bal_repstart = $bal_row['FOyear'];// first year of construction + 1 + Grace period
+                        $bal_lastpaymentyear = $bal_repstart + $bal_maturval - 1;// Last year of repayment
+
+                        //if Tot_E2 tj izvor finansiranja iz $bal_cdData onda ne radi nista jer EC2 i PL nisu ukljuceni
+                        if ($bal_totalfinance != 0)
+                        {
+                            //repayment rate option fo export credit
+    						if($bal_trmData['RepaymentOption'] == 'UI')
+                            {
+    							$bal_reprate = $bal_totalfinance/$bal_trmData['MaturityTime'];//Repay_Rate = TotalExport/MaturityTime       for uniform installment of principle amount
+    						}
+                            elseif($bal_trmData['RepaymentOption'] == 'ST')
+                            {
+    							$bal_reprat = $fpmt->PMT($bal_trmData['InterestRate']/100, $bal_trmData['MaturityTime'], -1,0);//PMT(interest rate , MaturityTime, -1,0)  for steady repayment of P+I
+    							$bal_reprate = $bal_reprat * $bal_totalfinance; //UFI
+    						}
+
+    						for($bal_i=$ahData['startYear'];$bal_i <= $ahData['endYear']; $bal_i++)    //start loop from first year of study
+                            {
+    							if($bal_i >= $bal_cperiod and  $bal_i <= $bal_lastpaymentyear )
+                                {
+    								if($bal_trmData['InterestOption'] == 'C')
+                                    {
+    									$bal_intrate[$bal_i] = $bal_trmData['InterestRate'];//constant
+    								}
+                                    elseif($bal_trmData['InterestOption'] == 'F')
+                                    {
+    									$bal_intrate[$bal_i] = $bal_infData[$bal_CX.'_'.$bal_i] + $bal_trmData['InterestSpreadRate'];// inf_rate+ Int_spread
+    								}
+
+                                     //intrest caluculation on export credit
+                                    //expi ECI export credit interest for given year
+                                    $bal_expi[$bal_i] = ($bal_expb[$bal_i-1] * $bal_intrate[$bal_i]/100);
+
+                                    //repayment on export credit ECR
+    								$bal_yr = $bal_i -$bal_cperiod + 1;// current year-first year + 1
+    								$bal_fsvalue = $bal_FS.'_'.$bal_yr;//financeId_yearNo         [E1_1]
+    								$bal_ddvalue = $bal_cdData[$bal_fsvalue];//get value for drawdown for this study year  [56]
+
+       		                        $bal_repval = 'Repy_'.$bal_CX.'_'.$bal_FS.'_'.$bal_i.'_'.$bal_pid;     //[Repy_USD_E1_2012_1]
+
+    								if($bal_i >= $bal_repstart and  $bal_i <= $bal_lastpaymentyear )
+                                    {
+    									if($bal_trmData['RepaymentOption'] == 'UI')        //repayment  if Uniform installment
+                                        {
+    										$bal_exprepi[$bal_repval] = $bal_reprate;
+    									}
+                                        elseif($bal_trmData['RepaymentOption'] == 'ST')     //repayment  if Steady installment
+                                        {
+    										$bal_exprepi[$bal_repval] = $bal_reprate - $bal_expi[$bal_i-$bal_graceval];//repayment = UFI-Intrate
+
+    									}
+
+    									$bal_Data[$bal_repval] = $bal_exprepi[$bal_repval];
+    								}
+
+    								//Export_Credit1_Balance(f, p,j)= Export_Credit1_Balance(f, p,j-1) + Export_Credit1(f, p,j) - Export_Credit1_Repay(f, p,j).
+                                    $bal_expb[$bal_i] = $bal_expb[$bal_i-1]	+ $bal_ddvalue - $bal_exprepi[$bal_repval];//
+
+    								// Create Field Names for Balance,Repayment and Interest
+    								$bal_balval = 'Bal_'.$bal_CX.'_'.$bal_FS.'_'.$bal_i;
+    								$bal_intrval = 'Int_'.$bal_CX.'_'.$bal_FS.'_'.$bal_i;
+
+    								//Parsing  Balance ,Interest,Repayment in Data
+    								$bal_Data[$bal_balval] = $bal_expb[$bal_i];
+    								$bal_Data[$bal_intrval] = $bal_expi[$bal_i];
+
+    								if($bal_trmData['PDrawdown'] == 'YES')
+                                    {
+    									$bal_DD[$bal_i] = $bal_ddvalue * ($bal_trmData['PDRate']/100);
+    								}
+
+    								//ovaj dio ne radi
+    								if($bal_trmData['IDCOption'] == 'Y')
+                                    {
+                                     //13.10 vedran & Irej IDC calc
+                                        if($bal_i<$bal_row['FOyear'])
+                                         {
+                                             $idc_loan_dd[$bal_CX.'_'.$bal_FS.'_'.$bal_i] =  $bal_expi[$bal_i] * $bal_trmData['IDCLoan']/100;
+                                             $idc_loan_bal[$bal_CX.'_'.$bal_FS.'_'.$bal_i] = $idc_loan_bal[$bal_CX.'_'.$bal_FS.'_'.($bal_i-1)]+ $idc_loan_dd[$bal_CX.'_'.$bal_FS.'_'.$bal_i];
+                                             $idc_loan_int[$bal_CX.'_'.$bal_FS.'_'.$bal_i] = $idc_loan_bal[$bal_CX.'_'.$bal_FS.'_'.($bal_i-1)] * $bal_trmData['IDCRate']/100;
+                                             $idc_loan_rep[$bal_CX.'_'.$bal_FS.'_'.$bal_i] = 0;
+                                             $total_idc_loan = $idc_loan_bal[$bal_CX.'_'.$bal_FS.'_'.$bal_i];
+                                         }
+                                         else
+                                         {
+                                            if($bal_trmData['RepaymentOption'] == 'UI')
+                                            {
+                    						   $idc_loan_rep[$bal_CX.'_'.$bal_FS.'_'.$bal_i] = $total_idc_loan/ $bal_trmData['IDCTerm'];
+                                            }
+                                            elseif($bal_trmData['RepaymentOption'] == 'ST')
+                                            {
+                                               $bal_reprat_idc = $fpmt->PMT($bal_trmData['IDCRate']/100, $bal_trmData['IDCTerm'], -1,0);//PMT(interest rate , MaturityTime, -1,0)  for steady repayment of P+I
+         			                           $idc_loan_rep[$bal_CX.'_'.$bal_FS.'_'.$bal_i] = $bal_reprat_idc * $total_idc_loan-$idc_loan_bal[$bal_CX.'_'.$bal_FS.'_'.($bal_i-1)]*$bal_trmData['IDCRate']/100; //UFI
+                                            }
+                                            $idc_loan_bal[$bal_CX.'_'.$bal_FS.'_'.$bal_i] = $idc_loan_bal[$bal_CX.'_'.$bal_FS.'_'.($bal_i-1)]-$idc_loan_rep[$bal_CX.'_'.$bal_FS.'_'.$bal_i];
+                                            $idc_loan_int[$bal_CX.'_'.$bal_FS.'_'.$bal_i] = $idc_loan_bal[$bal_CX.'_'.$bal_FS.'_'.($bal_i-1)] * $bal_trmData['IDCRate']/100;
+                    					 }
+                                        $bal_idcdd = 'IDC_DD_'.$bal_CX.'_'.$bal_FS.'_'.$bal_i;
+                                        $bal_idcb = 'IDC_B_'.$bal_CX.'_'.$bal_FS.'_'.$bal_i;
+                                        $bal_idci = 'IDC_I_'.$bal_CX.'_'.$bal_FS.'_'.$bal_i;
+                                        $bal_idcr = 'IDC_R_'.$bal_CX.'_'.$bal_FS.'_'.$bal_i;
+                                        $bal_Data[$bal_idcdd] = $idc_loan_dd[$bal_CX.'_'.$bal_FS.'_'.$bal_i];
+                                        $bal_Data[$bal_idcb] = $idc_loan_bal[$bal_CX.'_'.$bal_FS.'_'.$bal_i];
+                                        $bal_Data[$bal_idci] = $idc_loan_int[$bal_CX.'_'.$bal_FS.'_'.$bal_i];
+                                        $bal_Data[$bal_idcr] = $idc_loan_rep[$bal_CX.'_'.$bal_FS.'_'.$bal_i];
+
+
+    								}
+
+
+    								if($bal_trmData['PDrawdown'] == 'YES'){ // Export_Credit_DD
+    									$bal_dfval = 'DF_'.$bal_CX.'_'.$bal_FS.'_'.$bal_i;
+    									$bal_Data[$bal_dfval] = $bal_DD[$bal_i];
+    									$bal_totdfval = 'TotDF_'.$bal_CX.'_'.$bal_FS.'_'.$bal_i;
+    									$bal_Data[$bal_totdfval] = $bal_Data[$bal_totdfval]+$bal_DD[$bal_i];
+    								}
+
+                                    //EC DD value in final array
+    								$bal_ddval = 'DD_'.$bal_CX.'_'.$bal_FS.'_'.$bal_i;
+    								$bal_Data[$bal_ddval] = $bal_ddvalue;
+
+    //********************************kalkulacija totalnog interest i repayment  zbirno po godinama************************************************************//
+
+    								// calculate for debit to show export credits by currency
+    								$bal_repval2 = 'Repy_'.$bal_CX.'_'.$bal_FS.'_'.$bal_i;
+    								$bal_Data2[$bal_ddval] = $bal_Data2[$bal_ddval] + $bal_ddvalue;
+    								$bal_Data2[$bal_balval] = $bal_Data2[$bal_balval] + $bal_expb[$bal_i];
+    								$bal_Data2[$bal_intrval] = $bal_Data2[$bal_intrval] + $bal_expi[$bal_i];
+    								$bal_Data2[$bal_repval2] = $bal_Data2[$bal_repval2] + $bal_exprepi[$bal_repval];
+
+
+                                  // Create Field Names for Balance,Repayment and Interest
+                                        $bal_idcddval = 'IDD_'.$bal_CX.'_'.$bal_FS.'_'.$bal_i;
+        								$bal_idcbalval = 'IB_'.$bal_CX.'_'.$bal_FS.'_'.$bal_i;
+        								$bal_idcrepval = 'IR_'.$bal_CX.'_'.$bal_FS.'_'.$bal_i;
+        								$bal_idcintrval = 'II_'.$bal_CX.'_'.$bal_FS.'_'.$bal_i;
+
+
+        								//Parsing  Balance ,Interest,Repayment in Data
+                                        $bal_Data[$bal_idcddval] = $bal_Data[$bal_ddval] + $bal_Data[$bal_idcdd];
+        								$bal_Data[$bal_idcbalval] = $bal_Data[$bal_idcb] + $bal_Data[$bal_balval];
+                                        $bal_Data[$bal_idcrepval] = $bal_Data[$bal_idcr] +$bal_Data[$bal_repval];
+        								$bal_Data[$bal_idcintrval] = $bal_Data[$bal_idci] + $bal_Data[$bal_intrval];
+
+
+        						}
+     						}
+                                //various fees related to export credit drowndown, commitment fee etc..
+        						if($bal_trmData['DUpfront'] == 'YES')
+                                {
+        							$bal_totufval = 'TotUF_'.$bal_CX.'_'.$bal_FS.'_'.$bal_i;
+        							$bal_ufval = 'UF_'.$bal_CX.'_'.$bal_FS.'_'.$bal_cperiod;
+        							$bal_Data[$bal_ufval] = $bal_totalfinance * ($bal_trmData['DURate']/100); //Export_Credit1_UF
+        							$bal_Data[$bal_totufval] = $bal_Data[$bal_totufval]+ $bal_Data[$bal_ufval];
+        						}
+        						if($bal_trmData['OTInitial'] == 'YES')
+                                {
+        							$bal_otval = 'OT_'.$bal_CX.'_'.$bal_FS.'_'.$bal_cperiod;
+        							$bal_tototval = 'TotOT_'.$bal_CX.'_'.$bal_FS.'_'.$bal_i;
+        							$bal_Data[$bal_otval] = $bal_totalfinance * ($bal_trmData['DURate']/100); //Export_Credit1_Fee_OTI
+        							$bal_Data[$bal_tototval] = $bal_Data[$bal_otval]+($bal_totalfinance * ($bal_trmData['DURate']/100)); //Total_Export_Credit1_fee_OTI
+        						}
+				        }
+					}
+				}
+			 }
+                $avd->add($bal_Data);  //promijenio jer su se u intermediate resultu javljali vise
+		}
+        //$avd->add($bal_Data);
+		$bal_Data2['sid'] = 1;
+		$bqd->add($bal_Data2);
+
+	}
+
+    echo "bal_trmData<Br>";
+
+//	die();
+
+	//****** Cal Total ExportCredit ********//
+
+
+		$chd = new Data($caseStudyId,$chxml);//cal_totalexport
+
+		$tex_cpData = $plant_Data;// get all Data for plants
+		$tex_excData = $inv_excData;// get exch Data
+        $tex_Data= array();
+		$tex_Data['sid'] = 1;//set SID for storing Data
+
+		foreach($tex_cpData as $tex_row){
+
+			$tex_CP = $tex_CX.'_'.$tex_row['id'];
+			$tex_bdData = $avd->getByField($tex_row['id'],'pid');// get values from cal_balance
+
+			$tex_pid = $tex_row['id'];
+
+
+			foreach($financeSources as $financesource){
+				if($financesource['type'] == 'E'){
+					$tex_FS = $financesource['id'];  //E1
+
+					for($tex_c = 0; $tex_c < count($allChunks); $tex_c++){
+						$tex_CX = $allChunks[$tex_c];  //currency
+
+						for($tex_i=$ahData['startYear'];$tex_i <= $ahData['endYear']; $tex_i++){// for each study year
+							$tex_CY = $tex_CX.'_'.$tex_i;
+							$tex_ii= $tex_i-1;
+
+
+							$tex_CYY = $tex_CX.'_'.$tex_ii;
+							$tex_idcintrval = 'II_'.$tex_CX.'_'.$tex_FS.'_'.$tex_i;//for IDC interest
+							$tex_idcrepval = 'IR_'.$tex_CX.'_'.$tex_FS.'_'.$tex_i;//for IDC repay
+							$tex_idcbalval = 'IB_'.$tex_CX.'_'.$tex_FS.'_'.$tex_i;//for IDC balance
+
+//							$tex_ddval = 'DD_'.$tex_CX.'_'.$tex_FS.'_'.$tex_i;//for export credit
+//							$tex_repval = 'Repy_'.$tex_CX.'_'.$tex_FS.'_'.$tex_i.'_'.$tex_pid;// for export credit repay
+//							$tex_balval = 'Bal_'.$tex_CX.'_'.$tex_FS.'_'.$tex_i;// for export credit Balance
+//							$tex_intrval = 'Int_'.$tex_CX.'_'.$tex_FS.'_'.$tex_i;
+
+                            $tex_ddval = 'IDD_'.$tex_CX.'_'.$tex_FS.'_'.$tex_i;//for export credit
+							$tex_repval = 'IR_'.$tex_CX.'_'.$tex_FS.'_'.$tex_i;//.'_'.$tex_pid;// for export credit repay
+							$tex_balval = 'IB_'.$tex_CX.'_'.$tex_FS.'_'.$tex_i;// for export credit Balance
+							$tex_intrval = 'II_'.$tex_CX.'_'.$tex_FS.'_'.$tex_i;
+
+							$tex_tec = 'L_'.$tex_CY;//Tot_Export_Credits(f,j)
+							$tex_tecr = 'R_'.$tex_CY;//Tot_Export_Credits_Repay(f,j)
+							$tex_tecb = 'B_'.$tex_CY;//Tot_Export_Credits_Balance(f,j)
+							$tex_teci = 'I_'.$tex_CY;//Tot_Export_Credits_Interest(f,j)
+
+							$tex_totufval = 'TotUF_'.$tex_CX.'_'.$tex_FS.'_'.$tex_i;
+							$tex_tototval = 'TotOT_'.$tex_CX.'_'.$tex_FS.'_'.$tex_i;
+							$tex_totdfval = 'TotDF_'.$tex_CX.'_'.$tex_FS.'_'.$tex_i;
+
+							//calculate Tot_Export_Credits(f,j),Tot_Export_Credits_Repay(f,j),Tot_Export_Credits_Balance(f,j),Tot_Export_Credits_Interest(f,j)
+							$tex_Data[$tex_tec]  = $tex_Data[$tex_tec] + $tex_bdData[$tex_ddval];//exportcredit
+							$tex_Data[$tex_tecr] = $tex_Data[$tex_tecr] + $tex_bdData[$tex_repval];//exportcredit_repay
+							$tex_Data[$tex_tecb] = $tex_Data[$tex_tecb] + $tex_bdData[$tex_balval];//exportcredit_bal
+							$tex_Data[$tex_teci] = $tex_Data[$tex_teci] + $tex_bdData[$tex_intrval];//exportcredit_int
+
+//                            echo "REPAYMENT<br>";
+//                            echo  $tex_bdData[$tex_repval]."<br>";
+//                            echo $tex_Data[$tex_tecr]."<br>";
+
+//                            echo 'year ' .$tex_i . "currency ". $tex_CX . 'value1 ' . $tex_Data[$tex_teci]."<br>";
+//                            echo 'year ' .$tex_i . "currency ". $tex_CX .'value2 ' . $tex_bdData[$tex_intrval]."<br>";
+
+							$tex_teclc[$tex_i] = $tex_bdData[$tex_ddval] * $tex_excData[$tex_CY];
+							$tex_tecrlc[$tex_i] = $tex_bdData[$tex_repval]  * $tex_excData[$tex_CY];
+							$tex_tecrlcn[$tex_i] = $tex_bdData[$tex_repval]  * $tex_excData[$tex_CYY];
+							$tex_tecblc[$tex_i] = $tex_bdData[$tex_balval] * $tex_excData[$tex_CY];
+							$tex_tecilc[$tex_i] = $tex_bdData[$tex_intrval]  * $tex_excData[$tex_CY];
+							$tex_tecuflc[$tex_i] = $tex_bdData[$tex_totufval] * $tex_excData[$tex_CY];
+							$tex_tecotlc[$tex_i] = $tex_bdData[$tex_tototval] * $tex_excData[$tex_CY];
+							$tex_tecdflc[$tex_i] = $tex_bdData[$tex_totdfval] * $tex_excData[$tex_CY];
+
+//							echo 'year ' .$tex_i . "currency ". $tex_CX .'value3 ' . $tex_tecilc[$tex_i]."<br>";
+
+							$tex_Data['LLC_'.$tex_i] = $tex_Data['LLC_'.$tex_i] + $tex_teclc[$tex_i];// Tot_Export_Credit_LC
+							$tex_Data['RLC_'.$tex_i] = $tex_Data['RLC_'.$tex_i] + $tex_tecrlc[$tex_i];// Tot_Export_Credit_Repay_LC
+							$tex_Data['RLCN_'.$tex_i] = $tex_Data['RLCN_'.$tex_i] + $tex_tecrlcn[$tex_i];// Tot_Export_Credit_Repay_LC for current maturity
+							$tex_Data['BLC_'.$tex_i] = $tex_Data['BLC_'.$tex_i] + $tex_tecblc[$tex_i];// Tot_Export_Credits_Balance_LC
+							$tex_Data['ILC_'.$tex_i] = $tex_Data['ILC_'.$tex_i] + $tex_tecilc[$tex_i];// Tot_Export_Credit_Int_LC
+
+							//Export credit1 and export credit2  LC
+							$tex_Data['LLC_'.$tex_FS.'_'.$tex_i] = $tex_Data['LLC_'.$tex_FS.'_'.$tex_i] + $tex_teclc[$tex_i];// Tot_Export_Credit_LC
+							$tex_Data['RLC_'.$tex_FS.'_'.$tex_i] = $tex_Data['RLC_'.$tex_FS.'_'.$tex_i] + $tex_tecrlc[$tex_i];// Tot_Export_Credit_Repay_LC
+							$tex_Data['BLC_'.$tex_FS.'_'.$tex_i] = $tex_Data['BLC_'.$tex_FS.'_'.$tex_i] + $tex_tecblc[$tex_i];// Tot_Export_Credits_Balance_LC
+							$tex_Data['ILC_'.$tex_FS.'_'.$tex_i] = $tex_Data['ILC_'.$tex_FS.'_'.$tex_i] + $tex_tecilc[$tex_i];// Tot_Export_Credit_Int_LC
+
+							$tex_Data['OTLC_'.$tex_i] = $tex_Data['OTLC_'.$tex_i] + $tex_tecotlc[$tex_i];// Tot_Export_Credit_FEE_OTI_LC
+							$tex_Data['DFLC_'.$tex_i] = $tex_Data['DFLC_'.$tex_i] + $tex_tecdflc[$tex_i];// Tot_Export_Credit_FEE_DD_LC
+							$tex_Data['UFLC_'.$tex_i] = $tex_Data['UFLC_'.$tex_i] + $tex_tecuflc[$tex_i];// Tot_Export_Credit_FEE_UF_LC
+							//Tot_export_Credit_fee(f,j)
+							$tex_Data['TFEE_'.$tex_CY] = $tex_Data['TFEE_'.$tex_CY] + $tex_bdData[$tex_totufval] + $tex_bdData[$tex_tototval] +$tex_bdData[$tex_totdfval];
+						//	$tex_Data['TUF_'.$tex_CY] = $tex_Data['TUF_'.$tex_CY] + $tex_bdData[$tex_totufval];//Tot_export_Credit_UF(f,j)
+						//	$tex_Data['TDF_'.$tex_CY] = $tex_Data['TDF_'.$tex_CY] + $tex_bdData[$tex_totdfval];//Tot_export_Credit_DF(f,j)
+							$tex_Data['FLC_'.$tex_i] = $tex_Data['FLC_'.$tex_i] + $tex_tecotlc[$tex_i] + $tex_tecdflc[$tex_i] + $tex_tecuflc[$tex_i];//Tot_export_Credit_fee_lc(j)
+
+//                        echo "INTEREST<br>";
+//                        echo 	"year " . $tex_i . " " . $tex_Data['ILC_'.$tex_i]."<br>";
+//                          echo 	"year " . $tex_i . " " . $tex_Data['ILC_'.$tex_FS.'_'.$tex_i]."<br>";
+					}
+					}
+				}
+			}
+		}
+			$chd->add($tex_Data);
+
+
+//echo "tex_bdData<Br>";
+//echo "<pre>";
+//print_r($tex_bdData);
+//echo "</pre>";
+//	die();
+	//********** Cal  Balance  for Commercial Loan***********************
+    //***********finacial sources L1*******************************/*
+	require_once(INCLUDE_PATH."financial_class.php");
+	$afd = new Data($caseStudyId,$afxml);
+
+	$col_cpData = $plant_Data;//get Data for all plants
+	$col_infData = $caiData;//get inflation
+
+	if(is_array($col_cpData) && count($col_cpData) > 0){ //Check if plant Data exists
+		foreach($col_cpData as $col_row){
+			$col_Data = ''; //intialise the Data set
+			$col_pid = $col_row['id'];// pass plant id value
+			$col_Data['pid'] = $col_pid;//assign pass plant id value to pid
+			for($col_c = 0; $col_c < count($allChunks); $col_c++){ // for each currency
+				$col_fidval = $allChunks[$col_c].'_'.$col_pid;//assign currency_pid to variable
+				$col_cdData = $abd->getByField($col_fidval,'fid');// get all values from drawndown using fid field
+				$col_CX = $allChunks[$col_c];
+				foreach($financeSources as $financesource){// for each finance source
+					if($financesource['type'] == 'C'){
+						$col_FS = $financesource['id'];
+						$col_cperiod = $col_row['FOyear']-$col_row['CPeriod'];//calculating first year of construction
+						$col_repval = $col_fidval.'_'.$col_FS;// currency_pid_financeid
+						$col_reprate = $col_carData[$col_repval];// get repay rate for currency_pid_financeid
+						$col_trmData = $aud->getByField($col_repval,'fid');
+						$col_intval = $col_trmData['InterestRate'];// extracting interest rate for this finance source
+						$col_maturval = $col_trmData['MaturityTime'];// extracting maturity time for this finance source
+						$col_totalfinance = $col_cdData['Tot_'.$col_FS];//extract total  investment for this plant and finance source
+						$col_totbalval = 'TotBal_'.$col_CX.'_'.$col_FS;//assigning field names  for storing values
+						$col_totrepval = 'TotREP_'.$col_CX.'_'.$col_FS;
+						$col_totintrval = 'TotInt_'.$col_CX.'_'.$col_FS;
+						$col_Data[$col_totrepval] = 0;	//making sure that field values are set to zero
+						//$col_Data[$col_totbalval] = 0;
+						$col_Data[$col_totintrval] = 0;
+						$col_repstart = $col_cperiod + 1 ;// first year of construction + 1 + Grace period
+						//if($col_trmData['RepaymentOption'] == 'UI'){
+						//	$col_reprate = $col_totalfinance/$col_trmData['MaturityTime'];//Repay_Rate = TotalExport/MaturityTime       for uniform installment of principle amount
+						//}elseif($col_trmData['RepaymentOption'] == 'ST'){
+							//$col_reprat = $fpmt->PMT($col_trmData['InterestRate']/100, $col_trmData['MaturityTime'], -1,0);//PMT(interest rate , MaturityTime, -1,0)  for steady repayment of P+I
+							//$col_reprate = $col_reprat * $col_totalfinance; //UFI
+						//}
+
+						for($col_i=$ahData['startYear'];$col_i <= $ahData['endYear']; $col_i++){ //start loop from first year of study
+							// if finance source is other than Bond & Equity
+								$col_k = $col_i+1;
+
+								$col_lstyear = $col_cperiod +$col_maturval;
+								if($col_i<$col_cperiod){// if study year is less than first year of construction
+									$col_expb[$col_i] = 0;
+								}elseif($col_i >= $col_cperiod  and  $col_i <= $col_lstyear ){//if study year is greater than 1st yr of construction and less than 'first year of construction + 1 + Grace period'
+
+									$col_yr = $col_i-$col_cperiod+1;// current year-first year + 1
+									$col_fsvalue = $col_FS.'_'.$col_yr;//financeId_yearNo
+									$col_ddvalue = $col_cdData[$col_fsvalue];//get value for drawdown for this study year
+									if($col_ddvalue > 0){ // if DDown exist for this year ,then calculate repayment for this DD over maturity period
+										for($col_j=0;$col_j < $col_maturval; $col_j++){// set repayment for each maturity year
+											$col_m= $col_k + $col_j;// 'Studyyear+1'+ year of return
+
+											$col_repyval = 'Repy_'.$col_CX.'_'.$col_FS.'_'.$col_m.'_'.$col_pid;
+
+
+											//if($col_trmData['RepaymentOption'] == 'UI'){//repayment  if Uniform installment
+											$col_exprepi[$col_repyval] = $col_exprepi[$col_repyval] + $col_ddvalue/$col_trmData['MaturityTime'];
+
+											//}elseif($col_trmData['RepaymentOption'] == 'ST'){//repayment  if Steady installment
+												//$rr_reprate = 1/$rr_ctData['MaturityTime'];
+												//$col_exprepi[$col_repyval] = $col_reprate - $col_expi[$col_i];//repayment = UFI-Intrate
+											//}
+										}
+									}else{	// if DDown does not exist for this year ,this will set repayment
+										//$col_repyval = 'Repy_'.$col_CX.'_'.$col_FS.'_'.$col_i.'_'.$col_pid;
+										//$col_exprepi[$col_repyval] = $col_exprepi[$col_repyval];
+									}
+									$col_repyval = 'Repy_'.$col_CX.'_'.$col_FS.'_'.$col_i.'_'.$col_pid;
+								}
+						}
+						for($col_i=$ahData['startYear'];$col_i <= $ahData['endYear']; $col_i++){ //start loop from first year of study
+							// if finance source is other than Bond & Equity
+							$col_k = $col_i+1;
+							if($col_trmData['InterestOption'] == 'C'){
+								$col_intrate[$col_i] = $col_trmData['InterestRate'];//constant
+							}elseif($col_trmData['InterestOption'] == 'F'){
+								$col_intrate[$col_i] = $col_infData['I_'.$col_CX.'_'.$col_i] + $col_trmData['InterestSpreadRate'];// inf_rate+ Int_spread
+							}
+
+							$col_expi[$col_i] = $col_expb[$col_i-1] * ($col_intrate[$col_i]/100);// calculating Interest
+							$col_lstyear = $col_cperiod +$col_maturval;
+							$col_yr = $col_i-$col_cperiod+1;// current year-first year + 1
+							$col_fsvalue = $col_FS.'_'.$col_yr;//financeId_yearNo
+							$col_ddvalue = $col_cdData[$col_fsvalue];//get value for drawdown for this study year
+							$col_repyval = 'Repy_'.$col_CX.'_'.$col_FS.'_'.$col_i.'_'.$col_pid;
+							if($col_trmData['PDrawdown'] == 'YES'){
+								$col_DD[$col_i] = $col_ddvalue * ($col_trmData['PDRate']/100);
+							}
+
+							$col_expb[$col_i] = $col_expb[$col_i-1] + $col_ddvalue - $col_exprepi[$col_repyval];//
+
+							// Create Field Names for Balance,Repayment and Interest,DD
+							$col_im = $col_i-1;
+							$col_balval = 'Bal_'.$col_CX.'_'.$col_FS.'_'.$col_i;
+							$col_balval2 = 'Bal_'.$col_CX.'_'.$col_FS.'_'.$col_im;
+							$col_repval = 'Repy_'.$col_CX.'_'.$col_FS.'_'.$col_i.'_'.$col_pid;
+							$col_intrval = 'Int_'.$col_CX.'_'.$col_FS.'_'.$col_i;
+							$col_ddval = 'DD_'.$col_CX.'_'.$col_FS.'_'.$col_i;
+							if($col_expb[$col_i] < 0.001){
+								$col_expb[$col_i] = 0;}
+							//Parsing  Balance ,Interest,Repayment in Data
+							$col_Data[$col_balval] = $col_expb[$col_i];
+							$col_Data[$col_intrval] = $col_expi[$col_i];
+							$col_Data[$col_repval] = $col_exprepi[$col_repval];
+							$col_Data[$col_ddval] = $col_ddvalue;
+
+							//Calculate Total  Repayment,  Balance and Interest
+							$col_Data[$col_totrepval] = $col_Data[$col_totrepval]+$col_exprepi[$col_repval];
+							//$col_Data[$col_totbalval] = $col_Data[$col_totbalval]+$col_expb[$col_i]-$col_expb[$col_i-1];
+							$col_Data[$col_totintrval] = $col_Data[$col_totintrval]+$col_expi[$col_i];
+						}
+					}
+
+				}
+			}
+			$afd->add($col_Data);
+		}
+
+	}
+
+	//****** Cal Total Project Loan ********//
+
+	$cid = new Data($caseStudyId,$cixml); //cal_totalcommloan
+
+	$tcl_cpData = $plant_Data;// get all Data for plants
+	$tcl_excData = $inv_excData;// get exch Data
+
+	$tcl_Data['sid'] = 1;//set SID for storing Data
+	foreach($tcl_cpData as $tcl_row){
+		$tcl_CP = $tcl_CX.'_'.$tcl_row['id'];
+		$tcl_bdData = $afd->getByField($tcl_row['id'],'pid');// get values from cal_balance
+		$tcl_pid = $tcl_row['id'];
+		foreach($financeSources as $financesource){
+			if($financesource['type'] == 'C'){
+				$tcl_FS = $financesource['id'];
+				for($tcl_c = 0; $tcl_c < count($allChunks); $tcl_c++){
+					$tcl_CX = $allChunks[$tcl_c];
+					for($tcl_i=$ahData['startYear'];$tcl_i <= $ahData['endYear']; $tcl_i++){// for each study year
+					    $tcl_ii = $tcl_i -1;
+						$tcl_CY = $tcl_CX.'_'.$tcl_i;
+						$tcl_CYY = $tcl_CX.'_'.$tcl_ii;
+						$tcl_ddval = 'DD_'.$tcl_CX.'_'.$tcl_FS.'_'.$tcl_i;//for comm loan
+						$tcl_repval = 'Repy_'.$tcl_CX.'_'.$tcl_FS.'_'.$tcl_i.'_'.$tcl_pid;// for comm loan repay
+						$tcl_balval = 'Bal_'.$tcl_CX.'_'.$tcl_FS.'_'.$tcl_i;// for comm loan Balance
+						$tcl_intrval = 'Int_'.$tcl_CX.'_'.$tcl_FS.'_'.$tcl_i;// for comm loan Interest
+
+						$tcl_tec = 'L_'.$tcl_CY;//New_comm_loans(c,j)
+						$tcl_tecr = 'R_'.$tcl_CY;//New_comm_loans_Repay(c,j)
+						$tcl_tecb = 'B_'.$tcl_CY;//New_comm_loans_Balance(c,j)
+						$tcl_teci = 'I_'.$tcl_CY;//New_comm_loans_Interest(c,j) or New_Loans_Interest(c, j)
+
+						$tcl_totufval = 'TotUF_'.$tcl_CX.'_'.$tcl_FS.'_'.$tcl_i;
+						$tcl_tototval = 'TotOT_'.$tcl_CX.'_'.$tcl_FS.'_'.$tcl_i;
+						$tcl_totdfval = 'TotDF_'.$tcl_CX.'_'.$tcl_FS.'_'.$tcl_i;
+
+						//calacualte New_comm_loans(c,j),New_comm_loans_Repay(c,j),New_comm_loans_Balance(c,j),New_comm_loans_Interest(c,j)
+						$tcl_Data[$tcl_tec] = $tcl_Data[$tcl_tec] +  $tcl_bdData[$tcl_ddval];//commloan+commloanIDC_int
+						$tcl_Data[$tcl_tecr] = $tcl_Data[$tcl_tecr] + $tcl_bdData[$tcl_repval] ;//commloan_repay+commloanIDC_repay
+						$tcl_Data[$tcl_tecb] = $tcl_Data[$tcl_tecb] + $tcl_bdData[$tcl_balval] ;//commloan_bal+commloanIDC_bal
+						$tcl_Data[$tcl_teci] = $tcl_Data[$tcl_teci] + $tcl_bdData[$tcl_intrval] ;//commloan_int+commloanIDC_int
+
+						$tcl_teclc[$tcl_i] = $tcl_bdData[$tcl_ddval] * $tcl_excData[$tcl_CY];
+						$tcl_tecrlc[$tcl_i] = $tcl_bdData[$tcl_repval]  * $tcl_excData[$tcl_CY];
+						$tcl_tecrlcn[$tcl_i] = $tcl_bdData[$tcl_repval]  * $tcl_excData[$tcl_CYY];
+						$tcl_tecblc[$tcl_i] = $tcl_bdData[$tcl_balval]  * $tcl_excData[$tcl_CY];
+						$tcl_tecilc[$tcl_i] = $tcl_bdData[$tcl_intrval]  * $tcl_excData[$tcl_CY];
+						$tcl_tecuflc[$tcl_i] = $tcl_bdData[$tcl_totufval] * $tcl_excData[$tcl_CY];
+						$tcl_tecotlc[$tcl_i] = $tcl_bdData[$tcl_tototval] * $tcl_excData[$tcl_CY];
+						$tcl_tecdflc[$tcl_i] = $tcl_bdData[$tcl_totdfval] * $tcl_excData[$tcl_CY];
+
+
+
+						$tcl_Data['LLC_'.$tcl_i] = $tcl_Data['LLC_'.$tcl_i] + $tcl_teclc[$tcl_i];// New_comm_loan_LC
+						$tcl_Data['RLC_'.$tcl_i] = $tcl_Data['RLC_'.$tcl_i] + $tcl_tecrlc[$tcl_i];// New_comm_loan_Repay_LC
+						$tcl_Data['RLCN_'.$tcl_i] = $tcl_Data['RLCN_'.$tcl_i] + $tcl_tecrlcn[$tcl_i];// New_comm_loan_Repay_LC for current maturity
+						$tcl_Data['BLC_'.$tcl_i] = $tcl_Data['BLC_'.$tcl_i] + $tcl_tecblc[$tcl_i];// New_comm_loan_Balance_LC
+						$tcl_Data['ILC_'.$tcl_i] = $tcl_Data['ILC_'.$tcl_i] + $tcl_tecilc[$tcl_i];// New_comm_loan_Int_LC or  New_Loans_Interest_LC
+
+						$tcl_Data['OTLC_'.$tcl_i] = $tcl_Data['OTLC_'.$tcl_i] + $tcl_tecotlc[$tcl_i];// New_comm_loan_FEE_OTI_LC
+						$tcl_Data['DFLC_'.$tcl_i] = $tcl_Data['DFLC_'.$tcl_i] + $tcl_tecdflc[$tcl_i];// New_comm_loan_FEE_DD_LC
+						$tcl_Data['UFLC_'.$tcl_i] = $tcl_Data['UFLC_'.$tcl_i] + $tcl_tecuflc[$tcl_i];// New_comm_loan_FEE_UF_LC
+						$tcl_Data['TFEE_'.$tcl_CY] = $tcl_Data['TFEE_'.$tcl_CY] + $tcl_bdData[$tcl_totufval] + $tcl_bdData[$tcl_tototval] +$tcl_bdData[$tcl_totdfval];//New_comm_loan_fee(c,j)
+						$tcl_Data['FLC_'.$tcl_i] = $tcl_Data['FLC_'.$tcl_i] + $tcl_tecotlc[$tcl_i] + $tcl_tecdflc[$tcl_i] + $tcl_tecuflc[$tcl_i];//New_comm_loan_fee_lc(c,j)
+					}
+				}
+			}
+		}
+	}
+	$cid->add($tcl_Data);
+
+
+	// ****************** Cal Sales **********************************//
+
+
+	$ayd = new Data($caseStudyId,$ayxml);
+	$azd = new Data($caseStudyId,$azxml);
+	$bkd = new Data($caseStudyId,$bkxml);
+
+	$sl_excData = $inv_excData;//get exchage rate list
+	$sl_azData = $azd->getall();// get sale Data
+	$sl_adData = $caiData;//get inflation index Data
+
+	if(is_array($sl_azData) && count($sl_azData) > 0){
+		foreach($sl_azData as $sl_row){
+			$sl_Data = '';//intialise the Data set
+			$sl_Data['fid'] = $sl_row['id'];
+			$sl_Data['Name'] = $sl_row['Name'];
+			$sl_Data['ClientName'] = $sl_row['ClientName'];
+			$sl_client = $sl_row['ClientName'];
+			$sl_Data['TradeCurrency'] = $sl_row['TradeCurrency'];
+			$sl_Data['PriceBase'] = $sl_row['PriceBase'];
+			$sl_pricebase = $sl_row['PriceBase'];
+			$sl_LIX[$ahData['startYear']-1]=1;
+			for($sl_i=$ahData['startYear'];$sl_i <= $ahData['endYear']; $sl_i++){
+				$sl_amtval = 'Amt_'.$sl_i;
+				if($sl_row['Amount'] == 'FD'){ //if Amount type is fixed
+					$sl_AMT[$sl_i] = $sl_row['AmountFixed'];
+				}elseif($sl_row['Amount'] == 'YR'){//if Amount type is yearly change
+					if($sl_row[$sl_amtval] ==''){ //if Amount is empty for this year then take value from previous year
+						$sl_AMT[$sl_i] = $sl_AMT[$sl_i-1];
+					}else{
+						$sl_AMT[$sl_i] = $sl_row[$sl_amtval];// Amount  for this year given by user
+					}
+				}
+				$sl_priceval = 'Pri_'.$sl_i;
+				$sl_CX = $sl_row['TradeCurrency'];
+				$sl_CY = $sl_CX.'_'.$sl_i;
+				if($sl_row['Price'] == 'SC'){ //if Standard Change Relative to Inflation
+					$sl_PRF[$sl_i] = $sl_row['PriceFixed'];
+					$sl_inflt = $sl_adData[$sl_CY];
+					$sl_baseyear = $ahData['startYear'] -1;
+					$sl_raise = $sl_i - $sl_baseyear;
+					$sl_standchange = 1 + ($sl_PRF[$sl_i]/100);
+					if($sl_raise == 0){
+						$sl_LIX[$sl_i] = $sl_standchange;
+					}else{
+						$sl_LIX[$sl_i] = pow($sl_standchange,$sl_raise);
+					}
+					$sl_PRC[$sl_i] = $sl_pricebase * $sl_LIX[$sl_i] * $sl_inflt;
+
+				}elseif($sl_row['Price'] == 'YC'){//if Yearly Price Change Relative to Inflation
+					if($sl_row[$sl_priceval] ==''){ //if Inflation Deviation is empty for this year then take value from previous year
+						$sl_PRF[$sl_i] = $sl_PRF[$sl_i-1];
+					}else{
+						$sl_PRF[$sl_i] = $sl_row[$sl_priceval];// Inflation Deviation  for this year given by user
+					}
+					$sl_inflt = $sl_adData['I_'.$sl_CY];
+					$sl_LIX[$sl_i] = 1 + $sl_PRF[$sl_i] + ($sl_inflt/100);
+					if($sl_i == $ahData['startYear']){
+						$sl_PRC[$sl_i] = $sl_row['PriceBase'];
+					}else{
+						$sl_PRC[$sl_i] = $sl_PRC[$sl_i-1] * $sl_LIX[$sl_i]; //currentprice(j-1) *[1+annualchange+ inflation]
+					}
+
+				}elseif($sl_row['Price'] == 'CP'){//if  Yearly Current Price
+					if($sl_row[$sl_priceval] ==''){ //if empty for this year then take value from previous year
+						$sl_PRF[$sl_i] = $sl_PRF[$sl_i-1];
+					}else{
+						$sl_PRF[$sl_i] = $sl_row[$sl_priceval];// price  for this year given by user
+					}
+						$sl_PRC[$sl_i] = $sl_PRF[$sl_i]; //
+				}
+				$sl_PRC[$sl_i] = $sl_PRC[$sl_i];
+				$sl_Data['Q_'.$sl_CY] = $sl_AMT[$sl_i];// Quanitity is passed to Data
+				$sl_Data['I_'.$sl_CY] = $sl_PRF[$sl_i];//Inflation Deviation by user passed to Data
+				$sl_Data['R_'.$sl_CY] = $sl_AMT[$sl_i] * $sl_PRC[$sl_i];// Revenue_Sale = quantity * price
+				$sl_Data['P_'.$sl_CY] = $sl_PRC[$sl_i];// Price is passed to Data
+
+				if($sl_CX == $baseCurr){
+					$sl_share[$sl_i] = $sl_AMT[$sl_i] * $sl_PRC[$sl_i];
+				}else{
+					$sl_share[$sl_i] = ($sl_AMT[$sl_i] * $sl_PRC[$sl_i]) * $sl_excData[$sl_CY];
+				}
+				$sl_Data2['LC_'.$sl_i] = $sl_Data2['LC_'.$sl_i] + $sl_share[$sl_i];// Revenue_Sale_LC(j)
+				$sl_Data2['RS_'.$sl_CY] = $sl_Data2['RS_'.$sl_CY] + ($sl_AMT[$sl_i] * $sl_PRC[$sl_i]);// Revenue_Sale(C,j)
+				$sl_Data2['RSC_'.$sl_client.'_'.$sl_CY] = $sl_Data2['RSC_'.$sl_client.'_'.$sl_CY] + ($sl_AMT[$sl_i] * $sl_PRC[$sl_i]);// Revenue_Sale_Client(d,C,j)
+			}
+			$ayd->add($sl_Data);
+		}
+		$sl_Data2['sid'] = 1;
+		$bkd->add($sl_Data2);
+
+	}
+
+
+	//****************** Cal Purchase ***********************8
+
+	$ard = new Data($caseStudyId,$arxml);
+	$bad = new Data($caseStudyId,$baxml);
+	$cgd = new Data($caseStudyId,$cgxml);
+
+	$pr_arData = $ard->getall();
+	$pr_adData = $caiData;
+	$pr_excData = $inv_excData;
+
+	if(is_array($pr_arData) && count($pr_arData) > 0){
+
+		foreach($pr_arData as $pr_row){
+			$pr_Data = '';//intialise the Data set
+			$pr_Data['fid'] = $pr_row['id'];
+			$pr_Data['Name'] = $pr_row['Name'];
+			$pr_Data['ClientName'] = $pr_row['ClientName'];
+			$pr_Data['TradeCurrency'] = $pr_row['TradeCurrency'];
+			$pr_Data['PriceBase'] = $pr_row['PriceBase'];
+			$pr_pricebase = $pr_row['PriceBase'];
+			$pr_LIX[$ahData['startYear']-1]=1;
+			for($pr_i=$ahData['startYear'];$pr_i <= $ahData['endYear']; $pr_i++){
+				$pr_amtval = 'Amt_'.$pr_i;
+				if($pr_row['Amount'] == 'FD'){ //if Amount type is fixed
+					$pr_AMT[$pr_i] = $pr_row['AmountFixed'];
+				}elseif($pr_row['Amount'] == 'YR'){//if Amount type is yearly change
+					if($pr_row[$pr_amtval] ==''){ //if Amount is empty for this year then take value from previous year
+						$pr_AMT[$pr_i] = $pr_AMT[$pr_i-1];
+					}else{
+						$pr_AMT[$pr_i] = $pr_row[$pr_amtval];// Amount  for this year given by user
+					}
+				}
+				$pr_Data[$pr_amtval] = $pr_AMT[$pr_i];// AMOUNT is passed to Data
+				$pr_Data2[$pr_Data['Name'].'_'.$pr_i] = $pr_Data2[$pr_Data['Name'].'_'.$pr_i] + $pr_AMT[$pr_i];// AMOUNT is passed to Data
+				$pr_priceval = 'Pri_'.$pr_i;
+				$pr_CX = $pr_row['TradeCurrency'];
+				$pr_CY = $pr_CX.'_'.$pr_i;
+				if($pr_row['Price'] == 'SC'){ //if Price type is fixed
+					$pr_PRF[$pr_i] = $pr_row['PriceFixed'];//get value for Inflation Deviation for Price of Standard Change
+					$pr_inflt = $pr_adData[$pr_CY];// get inflation index
+					$pr_baseyear = $ahData['startYear'] -1; // calculate base year
+					$pr_raise = $pr_i - $pr_baseyear; // use baseyear
+					$pr_standchange = 1+($pr_PRF[$pr_i]/100);
+					$pr_LIX[$pr_i] = pow($pr_standchange,$pr_raise);
+					$pr_PRC[$pr_i] = $pr_pricebase * $pr_LIX[$pr_i]* $pr_inflt; //base price * Inflation Deviation * inflation index
+				}elseif($pr_row['Price'] == 'YC'){//if Inflation Deviation type is yearly change
+					if($pr_row[$pr_priceval] ==''){ //if Inflation Deviation is empty for this year then take value from previous year
+						$pr_PRF[$pr_i] = $pr_PRF[$pr_i-1];
+					}else{
+						$pr_PRF[$pr_i] = $pr_row[$pr_priceval];// Inflation Deviation  for this year given by user
+					}
+					$pr_inflt = $pr_adData['I_'.$pr_CY];
+					$pr_LIX[$pr_i] = 1 + $pr_PRF[$pr_i] + ($pr_inflt/100);
+					if($pr_i == $ahData['startYear']){
+						$pr_PRC[$pr_i] = $pr_row['PriceBase'];
+					}else{
+						$pr_PRC[$pr_i] = $pr_PRC[$pr_i-1] * $pr_LIX[$pr_i]; //currentprice(j-1) *[1+annualchange+ inflation]
+					}
+				}elseif($pr_row['Price'] == 'CP'){//if  yearly current price
+					if($pr_row[$pr_priceval] ==''){ //if empty for this year then take value from previous year
+						$pr_PRF[$pr_i] = $pr_PRF[$pr_i-1];
+					}else{
+						$pr_PRF[$pr_i] = $pr_row[$pr_priceval];// price  for this year given by user
+					}
+						$pr_PRC[$pr_i] = $pr_PRF[$pr_i]; //
+				}
+				$pr_PRC[$pr_i] = $pr_PRC[$pr_i];
+
+				$pr_Data['Q_'.$pr_CY] = $pr_AMT[$pr_i];// Quanitity is passed to Data
+				$pr_Data['I_'.$pr_CY] = $pr_PRF[$pr_i];//Inflation Deviation by user passed to Data
+				$pr_Data['E_'.$pr_CY] = $pr_AMT[$pr_i] * $pr_PRC[$pr_i];// expenditure = quantity * price
+				$pr_Data['P_'.$pr_CY] = $pr_PRC[$pr_i];// Price is passed to Data
+
+				if($pr_CX == $baseCurr){
+					$pr_share[$pr_i] = $pr_AMT[$pr_i] * $pr_PRC[$pr_i];
+				}else{
+					$pr_share[$pr_i] = ($pr_AMT[$pr_i] * $pr_PRC[$pr_i]) * $pr_excData[$pr_CY];
+				}
+				$pr_Data2['LC_'.$pr_i] = $pr_Data2['LC_'.$pr_i] + $pr_share[$pr_i];//Tot_Expenses_Purchase_LC(j)
+				$pr_Data2['EP_'.$pr_CY] = $pr_Data2['EP_'.$pr_CY] + ($pr_AMT[$pr_i] * $pr_PRC[$pr_i]);// Expenses_Purchase(C,j)
+				//$pr_Data2['RSC_'.$pr_client.'_'.$pr_CY] = $pr_Data['RSC_'.$pr_client.'_'.$pr_CY] + ($pr_AMT[$pr_i] * $pr_PRC[$pr_i]);// Expenses_purchase_Client(d,C,j)
+			}
+			$bad->add($pr_Data);
+		}
+		$pr_Data2['sid'] = 1;
+		$cgd->add($pr_Data2);
+	}
+
+
+	//******* Cal Old Loans ********************************//
+
+	$bvd = new Data($caseStudyId,$bvxml);
+	$cad = new Data($caseStudyId,$caxml);
+	$bod = new Data($caseStudyId,$boxml);// other fin Data
+
+	$ol_bvData = $bvd->getByField('1','sid');
+	$ol_boData = $bod->getByField('1','sid');
+	$ol_startyear = $ahData['startYear']; // set value of start year to variable
+	$ol_Data['sid']=1; // set the sid to 1 for storing values
+	$ol_excData = $inv_excData;
+	$ol_prevyear = $ol_startyear-1;
+	for($ol_c = 0; $ol_c < count($allChunks); $ol_c++){// loop to get each currency id
+		$ol_CX = $allChunks[$ol_c];// get currency id
+		$ol_rtype = 'RateType_'.$ol_CX;
+		$ol_rattype = $ol_bvData[$ol_rtype];// get the inflation type given by user
+		$ol_oldval = 'OL_'.$ol_CX;
+		$ol_startyear1 = $ol_startyear-1;// setting year for old loans outstanding
+		$ol_oldoutval[$ol_CX.'_'.$ol_startyear1] = $ol_bvData[$ol_oldval];
+		$ol_initial['IL'] = $ol_initial['IL'] +($ol_bvData[$ol_oldval] * $ol_excData[$ol_CX.'_'.$ol_startyear]);// Init_Loan
+		$ol_initial['IBL'] = $ol_initial['IBL'] +($ol_bvData[$ol_oldval] * $ol_excData[$ol_CX.'_'.$ol_prevyear]);// Init_Loan
+		for($ol_i=$ol_startyear;$ol_i <= $ahData['endYear']; $ol_i++){
+			$ol_CY = $ol_CX.'_'.$ol_i;
+			$ol_lon = 'L_'.$ol_CY;
+			$ol_rep = 'R_'.$ol_CY;
+			$ol_g = $ol_i-1;
+			$ol_CYY = $ol_CX.'_'.$ol_g;
+			$ol_lonval[$ol_CY] = $ol_bvData[$ol_lon];
+			$ol_repval[$ol_CY] = $ol_bvData[$ol_rep];
+			$ol_oldoutval[$ol_CY] = $ol_oldoutval[$ol_CYY] + $ol_lonval[$ol_CY] - $ol_repval[$ol_CY];
+			if($ol_rattype =="SR"){ //if average rate
+				$ol_int = 'Avg_'.$ol_CX;
+				$ol_intr = $ol_bvData[$ol_int];
+				$ol_intval[$ol_CY] = ($ol_intr/100) * $ol_oldoutval[$ol_CYY];
+
+			}elseif($ol_rattype =="YR"){ // if Yearly interest payment
+				$ol_intp = 'I_'.$ol_CY;
+				$ol_intval[$ol_CY] = $ol_bvData[$ol_intp];
+			}
+
+			$ol_exeouts[$ol_CY] = $ol_oldoutval[$ol_CY] * $ol_excData[$ol_CY];
+			$ol_exeint[$ol_CY] = $ol_intval[$ol_CY] * $ol_excData[$ol_CY];
+			$ol_exerep[$ol_CY] = $ol_repval[$ol_CY] * $ol_excData[$ol_CY];
+			$ol_exerepn[$ol_CY] = $ol_repval[$ol_CY] * $ol_excData[$ol_CYY];
+			$ol_exelon[$ol_CY] = $ol_lonval[$ol_CY] * $ol_excData[$ol_CY];
+
+
+
+			$ol_Data['LN_'.$ol_CY] = $ol_lonval[$ol_CY];//Old_Loans(c,j)
+			$ol_Data['LNL_'.$ol_i] = $ol_Data['LNL_'.$ol_i] + $ol_exelon[$ol_CY];//Old_Loans_LC
+
+			$ol_Data['L_'.$ol_CY] = $ol_oldoutval[$ol_CY];//Old_Loans_outstand(c,j)
+			$ol_Data['LL_'.$ol_i] = $ol_Data['LL_'.$ol_i] + $ol_exeouts[$ol_CY];//Old_Loans_Outstand_LC
+
+			$ol_Data['I_'.$ol_CY] = $ol_intval[$ol_CY];//Old_Loans_Int ( c,j)
+			$ol_Data['IL_'.$ol_i] = $ol_Data['IL_'.$ol_i] + $ol_exeint[$ol_CY];//Old_Loans_Int_LC
+
+			$ol_Data['R_'.$ol_CY] = $ol_repval[$ol_CY];//Old_Loans_Repay
+			$ol_Data['RL_'.$ol_i] = $ol_Data['RL_'.$ol_i] + $ol_exerep[$ol_CY];//Old_Loans_Repay_LC
+			$ol_Data['RLN_'.$ol_i] = $ol_Data['RLN_'.$ol_i] + $ol_exerepn[$ol_CY];//Old_Loans_Repay_LC for current maturity
+		}
+	}
+	$ol_Data['IL'] = $ol_initial['IL'] + $ol_boData['SLInitial'];//Init_Loans_LC
+	$ol_Data['ILO'] = $ol_Data['IL'] - $ol_Data['RL_'.$ol_startyear];//Init_Net_loans_outstand= Init_Loans_LC - Old_Loans_Repay_LC(First_year)
+		//$ol_Data['IBL'] = $ol_initial['IBL'];      //// this is changed to the line below to correct the loan outstaning in the initial balance sheet
+
+	$ol_Data['IBL'] = $ol_Data['ILO'];
+
+	$cad->add($ol_Data);
+
+	//******* Cal New Commercial Loans ********************************//
+
+function calc_new_loans()
+{
+  global $allChunks, $ahData, $caseStudyId;
+
+  $data = array('sid' => 1);
+
+  $_loans = new Data($caseStudyId, 'loans_data');
+  $loans = $_loans->getByField('1','sid');
+
+  $_inflation = new Data($caseStudyId, 'cal_Inflation');
+  $inflation = $_inflation->getByField('1','sid');
+
+  $_exchange = new Data($caseStudyId, 'cal_Exchange');
+  $exchange = $_exchange->getByField('1','sid');
+
+  foreach($allChunks as $currency) {
+    // start fresh for each curncy
+    $balance = array();
+    $interest = array();
+    $repayment = array();
+
+    $term = $loans['T_'.$currency];
+    $interest_rate = $loans['S_'.$currency]/100;
+
+    for($year = $ahData['startYear']; $year <= $ahData['endYear']; ++$year) {
+      $drawdown = $loans['A_'.$currency.'_'.$year];
+      $inflation_rate = $inflation['I_'.$currency.'_'.$year]/100;
+      if($drawdown)
+	for($y = $year + 1; $y <= $year + $term; ++$y)
+	  $repayment[$y] += $drawdown / $term;
+      $data['B_'.$currency.'_'.$year] = $balance[$year] = $balance[$year-1] - $repayment[$year] + $drawdown;
+      $data['I_'.$currency.'_'.$year] = $interest[$year] = $balance[$year-1] * ($interest_rate + $inflation_rate);
+      $data['R_'.$currency.'_'.$year] = $repayment[$year];
+
+      $data['M_'.$currency.'_'.$year] = $maturity[$year] = $repayment[$year+1];
+      $data['O_'.$currency.'_'.$year] = $outstanding[$year] = $balance[$year] - $maturity[$year];
+
+      $exchange_rate = $exchange[$currency.'_'.$year];
+      $data['TD_'.$year] += $drawdown * $exchange_rate;
+      $data['TB_'.$year] += $balance[$year] * $exchange_rate;
+      $data['TI_'.$year] += $interest[$year] * $exchange_rate;
+      $data['TR_'.$year] += $repayment[$year] * $exchange_rate;
+
+      $data['TM_'.$year] += $maturity[$year] * $exchange_rate;
+      $data['TO_'.$year] += $outstanding[$year] * $exchange_rate;
+    }
+  }
+  $_cal_loans = new Data($caseStudyId, 'cal_loans');
+  $_cal_loans->add($data);
+}
+
+calc_new_loans();
+
+$_cal_loans = new Data($caseStudyId, 'cal_loans');
+$cal_loans = $_cal_loans->getByField('1','sid');
+
+	//******* Cal Old Bonds ********************************//
+
+	$bxd = new Data($caseStudyId,$bxxml);
+	$cbd = new Data($caseStudyId,$cbxml);
+
+	$ob_bxData = $bxd->getByField('1','sid');
+	$ob_startyear = $ahData['startYear']; // set value of start year to variable
+	$ob_Data['sid']=1; // set the sid to 1 for storing values
+	$ob_excData = $inv_excData;
+
+	for($ob_c = 0; $ob_c < count($allChunks); $ob_c++){// loop to get each currency id
+		$ob_CX = $allChunks[$ob_c];// get currency id
+		$ob_rtype = 'RateType_'.$ob_CX;
+		$ob_rattype = $ob_bxData[$ob_rtype];// get the inflation type given by user
+		$ob_oldval = 'OB_'.$ob_CX;
+		$ob_startyear1 = $ob_startyear-1;// setting year for old bonds outstanding
+		$ob_oldoutval[$ob_CX.'_'.$ob_startyear1] = $ob_bxData[$ob_oldval];// Init_Bonds(c)
+		$ob_initial['IBB'] = $ob_initial['IBB'] +($ob_bxData[$ob_oldval] * $ob_excData[$ob_CX.'_'.$ob_startyear1]);// Initial Bonds for Intialbalancesheet
+		for($ob_i=$ob_startyear;$ob_i <= $ahData['endYear']; $ob_i++){
+			$ob_bon = 'B_'.$ob_CX.'_'.$ob_i;
+			$ob_rep = 'R_'.$ob_CX.'_'.$ob_i;
+			$ob_g = $ob_i -1;
+			$ob_CY = $ob_CX.'_'.$ob_i;
+			$ob_CYY = $ob_CX.'_'.$ob_g;
+			$ob_bonval[$ob_CY] = $ob_bxData[$ob_bon];
+			$ob_repval[$ob_CY] = $ob_bxData[$ob_rep];
+			//Old_Bonds_outstand(c,j) = Old_Bonds_outstand(c,j-1) + Old_Bonds(c,j) - Old_Bonds_Repay(c,j),
+			$ob_oldoutval[$ob_CY] = $ob_oldoutval[$ob_CYY] + $ob_bonval[$ob_CY] - $ob_repval[$ob_CY];
+
+			if($ob_rattype =="SR"){ //if average rate
+				$ob_int = 'Avg_'.$ob_CX;
+				$ob_intr = $ob_bxData[$ob_int];
+				$ob_intval[$ob_CY] = ($ob_intr/100) * $ob_oldoutval[$ob_CYY];//Old_Bonds_Return (c,j)= Av_Return( c) �Old_Bonds_outstand(c,j-1).
+			}elseif($ob_rattype =="YR"){ // if Yearly interest payment
+				$ob_intp = 'I_'.$ob_CY;
+				$ob_intval[$ob_CY] = $ob_bxData[$ob_intp];
+			}
+
+
+			$ob_exeouts[$ob_CY] = $ob_oldoutval[$ob_CY] * $ob_excData[$ob_CY];
+			$ob_exeint[$ob_CY] = $ob_intval[$ob_CY] * $ob_excData[$ob_CY];
+			$ob_exeintn[$ob_CY] = $ob_intval[$ob_CY] * $ob_excData[$ob_CYY];
+			$ob_exerep[$ob_CY] = $ob_repval[$ob_CY] * $ob_excData[$ob_CY];
+			$ob_exebon[$ob_CY] = $ob_bonval[$ob_CY] * $ob_excData[$ob_CY];
+
+			$ob_Data['BD_'.$ob_CY] = $ob_bonval[$ob_CY];//Old_Bonds(c,j)
+			$ob_Data['BDL_'.$ob_i] = $ob_Data['BDL_'.$ob_i] + $ob_exebon[$ob_CY];//Old_Bonds_LC
+
+			$ob_Data['B_'.$ob_CY] = $ob_oldoutval[$ob_CY];//Old_Bonds_outstand(c,j)
+			$ob_Data['BL_'.$ob_i] = $ob_Data['BL_'.$ob_i] + $ob_exeouts[$ob_CY];//Old_Bonds_Outstand_LC
+
+			$ob_Data['I_'.$ob_CY] = $ob_intval[$ob_CY];//Old_Bonds_Repay(c,j)
+			$ob_Data['IL_'.$ob_i] = $ob_Data['IL_'.$ob_i] + $ob_exeint[$ob_CY];//Old_Bonds_Repay_LC
+			$ob_Data['ILN_'.$ob_i] = $ob_Data['ILN_'.$ob_i] + $ob_exeintn[$ob_CY];//Old_Bonds_Repay_LC for current maturity
+
+			$ob_Data['R_'.$ob_CY] = $ob_repval[$ob_CY];//Old_Bonds_Return(c,j)
+			$ob_Data['RL_'.$ob_i] = $ob_Data['RL_'.$ob_i] + $ob_exerep[$ob_CY];//Old_Bonds_Return_LC
+
+
+		}
+		$ob_Data['IO_'.$ob_CX] = $ob_bxData[$ob_oldval] - $ob_Data['I_'.$ob_CX.'_'.$ob_startyear];// Init_Net_Bonds_outstand (c ) = Init_Bonds (c ) - Old_Bonds_Repay_LC(c, First_year)
+		$ob_Data['IOLC'] = $ob_Data['IOLC'] +( $ob_Data['IO_'.$ob_CX] * $ob_excData[$ob_CX.'_'.$ob_startyear]);// Init_Net_Bonds_outstand_LC
+		$ob_Data['ICM'] = $ob_Data['RL_'.$ob_startyear] + $ol_Data['RL_'.$ob_startyear];// Init_Current_Maturity = Old_Bonds_Repay_LC(First_year) + Old_Loans_Repay_LC(First_year).
+
+	}
+	$ob_Data['IBB'] = $ob_initial['IBB'];
+//	$ob_Data['IBB'] = $ob_Data['BL_'.$ob_startyear] ;
+	$cbd->add($ob_Data);
+
+
+	//******* Cal New Bonds ********************************//
+
+	$bmd = new Data($caseStudyId,$bmxml);
+	$ccd = new Data($caseStudyId,$ccxml);
+
+	$bo_bmData = $bmd->getByField('1','sid');
+	$bo_startyear = $ahData['startYear']; // set value of start year to variable
+	$bo_Data['sid']=1; // set the sid to 1 for storing values
+	$bo_excData = $inv_excData;// get exch Data
+
+	for($bo_c = 0; $bo_c < count($allChunks); $bo_c++){// loop to get each currency id
+		$bo_CX = $allChunks[$bo_c];// get currency id
+		$bo_rate = 'ER_'.$bo_CX;
+		$bo_rateval = $bo_bmData[$bo_rate];// get the rate
+		$bo_trm = 'BT_'.$bo_CX;
+		$bo_trmval = $bo_bmData[$bo_trm];// get the bond term
+		$bo_bfirst = 'B_'.$bo_CX.'_'.$bo_startyear;
+
+		for($bo_i=$bo_startyear;$bo_i <= $ahData['endYear']; $bo_i++){
+			$bo_CY = $bo_CX.'_'.$bo_i;
+			$bo_bon = 'B_'.$bo_CY;
+			$bo_j = $bo_i + $bo_trmval;
+			$bo_g = $bo_i-1;
+			$bo_CYY = $bo_CX.'_'.$bo_g;
+			$bo_bonval[$bo_CY] = $bo_bmData[$bo_bon];
+			if($bo_i==$ahData['startYear']){
+				$bo_outval[$bo_CX.'_'.$bo_startyear] = $bo_bmData[$bo_bfirst];
+				$bo_repval[$bo_CX.'_'.$bo_j] = $bo_outval[$bo_CX.'_'.$bo_startyear];//setting repayment by adding i+term
+			}else{
+
+				$bo_repval[$bo_CX.'_'.$bo_j] = $bo_bonval[$bo_CY];//setting repayment by adding i+term
+				$bo_outval[$bo_CY] = $bo_outval[$bo_CX.'_'.$bo_g] + $bo_bonval[$bo_CY] -$bo_repval[$bo_CY];// bondOuts(i-1 ) +bond(i)-repayment
+				$bo_intval[$bo_CY] = $bo_outval[$bo_CX.'_'.$bo_g] * ($bo_rateval/100); //calculate interest = bondOuts(i-1 ) * exp rate
+				$bo_retval[$bo_CY] = $bo_outval[$bo_CY] * ($bo_rateval); //New_bonds_Return(c,j)= Bonds_Outstand(c,j)� Expeted_Rate(c).
+			}
+
+
+			$bo_Data['B_'.$bo_CY] = $bo_bonval[$bo_CY];//Bonds (currency name,k)
+			$bo_Data['R_'.$bo_CY] = $bo_repval[$bo_CY];//Bonds_Repayment (currency name,k)
+			$bo_Data['O_'.$bo_CY] = $bo_outval[$bo_CY];//Bonds_Outstand(currency name,j)
+			$bo_Data['I_'.$bo_CY] = $bo_intval[$bo_CY];//Bonds_Interest(currency name,j)
+			$bo_Data['N_'.$bo_CY] = $bo_retval[$bo_CY];//New_bonds_Return(c,j)
+
+
+			$bo_newbrepay[$bo_CY] = $bo_repval[$bo_CY]  * $bo_excData[$bo_CY];//New_Bonds_Repay_LC(j)  = bondrepay(j ) * exchange rate
+			$bo_newbrepayn[$bo_CY] = $bo_repval[$bo_CY]  * $bo_excData[$bo_CYY];//New_Bonds_Repay_LC(j)  = bondrepay(j ) * exchange rate for current maturity
+			$bo_newbout[$bo_CY] = $bo_outval[$bo_CY]  * $bo_excData[$bo_CY];//New_Bonds_Out_LC(j)  = bondoutstanding(j ) * exchange rate
+			$bo_newbond[$bo_CY] = $bo_bonval[$bo_CY]  * $bo_excData[$bo_CY];//New_Bonds_LC(j)  = bond(j ) * exchange rate
+			$bo_newbreturn[$bo_CY] = $bo_retval[$bo_CY]  * $bo_excData[$bo_CY];//New_Bonds_Return_LC(j)  = New_Bonds_Return(j) * exchange rate
+			$bo_newbint[$bo_CY] = $bo_intval[$bo_CY] * $bo_excData[$bo_CY];//New_Bonds_Int_LC(j)
+
+
+			$bo_Data['RLC_'.$bo_i] = $bo_Data['RLC_'.$bo_i] + $bo_newbrepay[$bo_CY];//New_Bonds_Repayment_LC(j)
+			$bo_Data['RLCN_'.$bo_i] = $bo_Data['RLCN_'.$bo_i] + $bo_newbrepayn[$bo_CY];//New_Bonds_Repayment_LC(j)
+			$bo_Data['OLC_'.$bo_i] = $bo_Data['OLC_'.$bo_i] + $bo_newbout[$bo_CY];//New_Bonds_Outstand_LC(j)
+			$bo_Data['BLC_'.$bo_i] = $bo_Data['BLC_'.$bo_i] + $bo_newbond[$bo_CY];//New_Bonds_LC(j)
+			$bo_Data['NLC_'.$bo_i] = $bo_Data['NLC_'.$bo_i] + $bo_newbreturn[$bo_CY];//New_Bonds_Return_LC(j)
+			$bo_Data['ILC_'.$bo_i] = $bo_Data['ILC_'.$bo_i] + $bo_newbint[$bo_CY];//New_Bonds_Int_LC(j)
+		}
+	}
+	$ccd->add($bo_Data);
+
+	//******* Cal Equity ********************************//
+
+	$aad = new Data($caseStudyId,$aaxml);
+	$bld = new Data($caseStudyId,$blxml);
+	$cdd = new Data($caseStudyId,$cdxml);
+
+	$eq_aaData = $aad->getByField('1','sid');
+	$eq_excData = $inv_excData;//get exchage rate list
+	$eq_infData = $caiData;//get inflation rate list
+	$eq_blData = $bld->getByField('1','sid');
+	$eq_startyear = $ahData['startYear']; // set value of start year to variable
+	$eq_Data['sid']=1; // set the sid to 1 for storing values
+	$eq_totout[$eq_startyear] = 0;
+
+	for($eq_c = 0; $eq_c < count($baseChunks); $eq_c++){// loop to get each currency id
+		$eq_CX = $baseChunks[$eq_c];// get currency id
+		$eq_drate = 'DR_'.$eq_CX;
+		$eq_drateval = $eq_blData[$eq_drate];// get the rate
+		//$eq_ini = 'EQUITY'.$eq_CX;
+		$eq_inival = $eq_aaData['Equity'];// get the intital equity
+		$eq_efirst = 'E_'.$eq_CX.'_'.$eq_startyear;
+		$eq_erfirst = 'ER_'.$eq_CX.'_'.$eq_startyear;
+		$eq_Data['IE'] = $eq_Data['IE'] +($eq_inival * $eq_excData[$eq_CX.'_'.$eq_startyear]);//  Init_Equity_LC
+		$eq_Data['IE_'.$eq_CX] = $eq_inival ;// Init_Equity(C)
+		for($eq_i=$eq_startyear;$eq_i <= $ahData['endYear']; $eq_i++){
+	    	$eq_CY = $eq_CX.'_'.$eq_i;
+			$eq_ii = $eq_i -1;
+			$eq_CYY = $eq_CX.'_'.$eq_ii;
+			$eq_equ = 'E_'.$eq_CY;
+			$eq_equr = 'ER_'.$eq_CY;
+
+			$eq_equval[$eq_i] = $eq_blData[$eq_equ];//get equity
+			$eq_returnval[$eq_i] = $eq_blData[$eq_equr];//get equity returned
+
+			if($eq_i == $eq_startyear){
+				$eq_outval[$eq_startyear] = ($eq_inival + $eq_blData[$eq_efirst])- $eq_blData[$eq_erfirst];//Equity_Outstand(c,First_year)
+			}else{
+				$eq_outval[$eq_i] = $eq_outval[$eq_i-1] + $eq_equval[$eq_i] -$eq_returnval[$eq_i];// Equity_Outstand(currency name,j) = equOuts(i-1 ) +equ(i)-repayment
+			}
+			//			$eq_divval[$eq_i] = $eq_outval[$eq_i] * $eq_drateval/100; //Dividend _Due(currency name, j)= Equity_Outstand(currency name,j) � Dividend_Rate(currency name).
+			//Dividend = max(0,
+			/* if($fi_Cum_Taxable_Income_LC[$eq_i] >0){ */
+			/*   $eq_divval[$eq_i] = max(0, min($eq_outval[$eq_i-1] * $eq_drateval/100, $fi_Taxable_Income_LC[$eq_i] - $fi_Income_Tax_LC[$eq_i] + min(0, $fi_Retained_Earn_LC[$eq_i]))); /\*MMMMMM*\/  */
+			/* } else { */
+			/*   $eq_divval[$eq_i] = 0; } */
+
+
+			$eq_Data['CE_'.$eq_CY] = $eq_equval[$eq_i] * $eq_infData[$eq_CY];//Equity Current(currency name,j)
+			$eq_Data['ED_'.$eq_CY] = $eq_blData[$eq_equ];//Equity Drawdown(currency name,j)
+			$eq_Data['E_'.$eq_CY] = $eq_outval[$eq_i];//Equity_Outstand(currency name,j)
+			$eq_Data['R_'.$eq_CY] = $eq_returnval[$eq_i];//Equity_Returned(currency name,j)
+			$eq_Data['D_'.$eq_CY] = $eq_divval[$eq_i];//Dividend _Due(currency name, j)
+
+
+			$eq_toteq[$eq_i] = $eq_returnval[$eq_i] * $eq_excData[$eq_CY];// Equity_Returned(currency name,j)   * Exch Rate
+			$eq_toteqn[$eq_i] = $eq_returnval[$eq_i] * $eq_excData[$eq_CYY];// Equity_Returned(currency name,j)   * Exch Rate(j+1) change for current maturity
+			$eq_neweq[$eq_i] = $eq_equval[$eq_i] * $eq_excData[$eq_CY];//New_Equity_LC(j)
+
+
+			$eq_Data['E_'.$eq_i] = $eq_Data['E_'.$eq_i] + $eq_toteq[$eq_i];//Tot_Equity_Repay_LC (j)
+			$eq_Data['EN_'.$eq_i] = $eq_Data['EN_'.$eq_i] + $eq_toteqn[$eq_i];//Tot_Equity_Repay_LC (j)  for current maturity
+			$eq_Data['N_'.$eq_i] = $eq_Data['N_'.$eq_i] + $eq_neweq[$eq_i];//New_Equity_LC(j)
+		}
+	}
+
+		//Calculate Total Equity Outst Localcurrency
+		for($eq_i=$eq_startyear;$eq_i <= $ahData['endYear']; $eq_i++){
+			for($eq_c = 0; $eq_c < count($baseChunks); $eq_c++){// loop to get each currency id
+				$eq_CX = $baseChunks[$eq_c];
+				$eq_CY = $eq_CX.'_'.$eq_i;
+				if($eq_CX == $baseCurr){
+					$eq_totout[$eq_i] = $eq_totout[$eq_i] + $eq_Data['E_'.$eq_CY];
+				}else{
+					$eq_totout[$eq_i] = $eq_totout[$eq_i] + ($eq_Data['E_'.$eq_CY] * $eq_excData[$eq_CY]);//Tot_Equity_Outstand_LC = EOutstd * Exch Rate
+				}
+
+			}
+			$eq_Data['T_'.$eq_i] = $eq_totout[$eq_i];//Tot_Equity_Outstand_LC = EOutstd * Exch Rate
+		}
+		/* //Calculate Equity share */
+		/* for($eq_c = 0; $eq_c < count($baseChunks); $eq_c++){// loop to get each currency id */
+		/* 	$eq_CX = $allChunks[$eq_c]; */
+		/* 	for($eq_i=$eq_startyear;$eq_i <= $ahData['endYear']; $eq_i++){ */
+		/* 		$eq_CY = $eq_CX.'_'.$eq_i; */
+		/* 		if($eq_CX == $baseCurr){ */
+		/* 			$eq_share[$eq_i] = $eq_Data['E_'.$eq_CY]; */
+		/* 		}else{ */
+		/* 			$eq_share[$eq_i] = $eq_Data['E_'.$eq_CY] * $eq_excData[$eq_CY]; */
+		/* 		} */
+		/* 		//Equity_Share(currency,j) = Equity_Outstand(currency,j) � Exc_Rate(currency name,j)/ Tot_Equity_Outstand_LC(j). */
+		/* 		if($eq_Data['T_'.$eq_i]){ */
+		/* 			$eq_Data['S_'.$eq_CY] = $eq_share[$eq_i]/$eq_Data['T_'.$eq_i]; */
+		/* 		} */
+		/* 	} */
+		/* } */
+
+	$cdd->add($eq_Data);
+
+
+	// ************ Cal OM Cost ***********//
+
+
+	$aod = new Data($caseStudyId,$aoxml);
+	$bbd = new Data($caseStudyId,$bbxml);
+
+	$om_cpData = $plant_Data;// get Data for all plants in this study
+	$om_infData = $caiData;// get inflation index Data
+
+	if(is_array($om_cpData) && count($om_cpData) > 0){// check if plant exist
+	    foreach($om_cpData as $om_row){
+			$om_idData = $aod->getByField($om_row['id'],'pid');// get OM cost by plant id
+			$om_Data = '';//intialise & clear the Data set
+			$om_Data['pid'] = $om_row['id'];// set pid = plant id
+			for($om_c = 0; $om_c < count($allChunks); $om_c++){// for each currency
+				$om_CX = $allChunks[$om_c];
+				for($om_i=$ahData['startYear'];$om_i <= $ahData['endYear']; $om_i++){// for each study year
+					$om_CY = $om_CX.'_'.$om_i;//currencyid_year
+					if($om_idData[$om_CY] ==''){ //if Amount is empty for this year then take value from previous year
+						$om_omcost[$om_i] = $om_omcost[$om_i-1];
+					}else{
+						$om_omcost[$om_i] = $om_idData[$om_CY];// Amount  for this year given by user
+					}
+					$om_Eom = $om_omcost[$om_i] * $om_infData[$om_CY];//OM cost * inflation index
+					$om_ein = 'E_'.$om_CY;
+					$om_Data[$om_CY]= $om_omcost[$om_i];//OM cost
+					$om_Data[$om_ein]= $om_Eom;	// Esclated OM cost
+				}
+			}
+			$bbd->add($om_Data);
+		}
+	}
+
+	// *************** Cal Fuel Cost ************************//
+
+
+	$amd = new Data($caseStudyId,$amxml);
+	$bcd = new Data($caseStudyId,$bcxml);
+
+	$fc_cpData = $plant_Data;// get Data for all plants
+	$fc_infData = $caiData;//get inflation index Data
+
+	if(is_array($fc_cpData) && count($fc_cpData) > 0){// check if plants exist
+	    foreach($fc_cpData as $fc_row){
+			$fc_imData = $amd->getByField($fc_row['id'],'pid');// get fuel Data by plant id
+			$fc_Data = '';//intialize & clear Data set
+			$fc_Data['pid'] = $fc_row['id'];//set pid = plant id
+			for($fc_c = 0; $fc_c < count($allChunks); $fc_c++){// for each currency
+				$fc_CX = $allChunks[$fc_c];
+				for($fc_i=$ahData['startYear'];$fc_i <= $ahData['endYear']; $fc_i++){// for each year
+					$fc_CY = $fc_CX.'_'.$fc_i;
+					if($fc_imData[$fc_CY] ==''){ //if Amount is empty for this year then take value from previous year
+						$fc_fuelcost[$fc_i] = $fc_fuelcost[$fc_i-1];
+					}else{
+						$fc_fuelcost[$fc_i] = $fc_imData[$fc_CY];// Amount  for this year given by user
+					}
+					$fc_Efc = $fc_fuelcost[$fc_i] * $fc_infData[$fc_CY];// Escl FuelCost(i)= fuel cost(i) *Inflation index (i)
+					$fc_ein = 'E_'.$fc_CY;
+					$fc_Data[$fc_CY]= $fc_fuelcost[$fc_i];	//FuelCost(i)= fuell cost(i)
+					$fc_Data[$fc_ein]= $fc_Efc;
+				}
+			}
+			$bcd->add($fc_Data);
+		}
+	}
+
+	//************** Cal Total Fuel Cost ********************//
+
+
+	$bed = new Data($caseStudyId,$bexml);
+
+	$tfc_cpData = $plant_Data;// get all plant Data
+	$tfc_caData = $bcd->getall();// get calculated fuel costs
+	$tfc_excData = $inv_excData;// get exch Data
+
+	if(is_array($tfc_caData) && count($tfc_caData) > 0){// check if  Calculated fuel costs exist
+		$tfc_Data['sid'] = 1;// set SID for storing Data
+		for($tfc_i=$ahData['startYear'];$tfc_i <= $ahData['endYear']; $tfc_i++){// for each year
+			for($tfc_c = 0; $tfc_c < count($allChunks); $tfc_c++){//for each currency
+				$tfc_CX = $allChunks[$tfc_c];
+				$tfc_ETC = 'E_'.$tfc_CX.'_'.$tfc_i;
+				$tfc_TC = $tfc_CX.'_'.$tfc_i;
+				$tfc_CY = $tfc_CX.'_'.$tfc_i;
+				foreach($tfc_caData as $tfc_row){
+					$tfc_Data[$tfc_ETC] = $tfc_Data[$tfc_ETC]+$tfc_row[$tfc_ETC];// Tot_Fuel_cost(c,j) Current
+					$tfc_Data[$tfc_TC] = $tfc_Data[$tfc_TC]+$tfc_row[$tfc_TC];// Tot_Fuel_cost(c,j)  without inflation
+					if($tfc_CX == $baseCurr){
+						$tfc_share[$tfc_i] = $tfc_row[$tfc_ETC];//local currency
+					}else{
+						$tfc_share[$tfc_i] = $tfc_row[$tfc_ETC] * $tfc_excData[$tfc_CY];//foreign currency
+					}
+					$tfc_Data['LC_'.$tfc_i] = $tfc_Data['LC_'.$tfc_i] + $tfc_share[$tfc_i];// Tot_Fuel_Cost_LC
+				}
+			}
+		}
+		$bed->add($tfc_Data);
+	}
+
+	// ************ Cal GeneralExpense Cost ***********//
+
+
+	$bud = new Data($caseStudyId,$buxml);
+	$byd = new Data($caseStudyId,$byxml);
+
+	$ge_cpData = $plant_Data;// get Data for all plants in this study
+	$ge_infData = $caiData;// get inflation index Data
+
+	if(is_array($ge_cpData) && count($ge_cpData) > 0){// check if plant exist
+	    foreach($ge_cpData as $ge_row){
+			$ge_idData = $bud->getByField($ge_row['id'],'pid');// get generalexpense by plant id
+			$ge_Data = '';//intialise & clear the Data set
+			$ge_Data['pid'] = $ge_row['id'];// set pid = plant id
+
+			for($ge_c = 0; $ge_c < count($allChunks); $ge_c++){// for each currency
+				$ge_CX = $allChunks[$ge_c];
+				for($ge_i=$ahData['startYear'];$ge_i <= $ahData['endYear']; $ge_i++){// for each study year
+					$ge_CY = $ge_CX.'_'.$ge_i;//currencyid_year
+					if($ge_idData[$ge_CY] ==''){ //if Amount is empty for this year then take value from previous year
+						$ge_genexpense[$ge_i] = $ge_genexpense[$ge_i-1];
+					}else{
+						$ge_genexpense[$ge_i] = $ge_idData[$ge_CY];// Amount  for this year given by user
+					}
+					$ge_Ege = $ge_genexpense[$ge_i] * $ge_infData[$ge_CY];//generalexpense * inflation index
+					$ge_ein = 'E_'.$ge_CY;
+					$ge_Data[$ge_CY]= $ge_genexpense[$ge_i];//generalexpense
+					$ge_Data[$ge_ein]= $ge_Ege;	// Esclated generalexpense
+				}
+			}
+			$byd->add($ge_Data);
+		}
+	}
+
+
+	//****** Cal Total  GeneralExpense Cost ********//
+
+
+	$bzd = new Data($caseStudyId,$bzxml);
+
+	$tge_cpData = $plant_Data;// get all Data for plants
+	$tge_caData = $byd->getall();//get all calculated OM Data
+	$tge_excData = $inv_excData;// get exch Data
+
+	if(is_array($tge_caData) && count($tge_caData) > 0){// check if calculated om Data exist
+		$tge_Data['sid'] = 1;//set SID for storing Data
+		for($tge_i=$ahData['startYear'];$tge_i <= $ahData['endYear']; $tge_i++){// for each study year
+
+			for($tge_c = 0; $tge_c < count($allChunks); $tge_c++){// for each currency
+				$tge_CX = $allChunks[$tge_c];
+				$tge_ETC = 'E_'.$tge_CX.'_'.$tge_i;
+				$tge_TC = $tge_CX.'_'.$tge_i;
+
+				foreach($tge_caData as $tge_row){
+					$tge_Data[$tge_ETC] = $tge_Data[$tge_ETC]+$tge_row[$tge_ETC];// Tot_Gen_Exp(C,j). Total generalexpense
+				    //tge_Data[$tge_TC] = $tge_Data[$tge_TC]+$tge_row[$tge_TC];// Total generalexpense without inflation
+					if($tge_CX == $baseCurr){
+						$tge_share[$tge_i] = $tge_row[$tge_ETC];//local currency
+					}else{
+						$tge_share[$tge_i] = $tge_row[$tge_ETC]* $tge_excData[$tge_TC];//foreign currency
+
+					}
+					$tge_Data['LC_'.$tge_i] = $tge_Data['LC_'.$tge_i] + $tge_share[$tge_i];// Tot_Gen_Exp_LC
+				}
+			}
+
+		}
+		$bzd->add($tge_Data);
+	}
+
+
+	//****** Cal Fixed_Revenues ********//
+
+	$cud = new Data($caseStudyId,$cuxml);
+	$cvd = new Data($caseStudyId,$cvxml);
+	$fri_cuData = $cud->getByfield(1,'sid');
+
+	for($fri_i=$ahData['startYear'];$fri_i <= $ahData['endYear']; $fri_i++){// for each study year
+		$fri_ii = $fri_i-1;
+		$fri_Fixed_Reveneus_initial = $fri_cuData['Fixed_Reveneus_initial'];
+		$fri_Grate_FRevenues = $fri_cuData['Grate_FRevenues'];
+		$fri_Other_Income_initial = $fri_cuData['Other_Income_initial'];
+		$fri_Grate_OIncome = $fri_cuData['Grate_OIncome'];
+		if($fri_i==$ahData['startYear']){
+		//Fixed_Revenues (j) = Fixed_Reveneus_initial � (1+ Grate_FRevenues/100)
+			$fri_Fixed_Reveneus[$fri_i] = $fri_Fixed_Reveneus_initial * (1+$fri_Grate_FRevenues/100);
+		//Other_Income (j) = Other_Income_initial � (1+ Grate_OIncome /100)
+			$fri_Other_Income[$fri_i] = $fri_Other_Income_initial * (1+$fri_Grate_OIncome/100);
+		}else{
+		//Fixed_Revenues (j) = Fixed_Revenues (j-1) � (1+ Grate_FRevenues/100)
+			$fri_Fixed_Reveneus[$fri_i] = $fri_Fixed_Reveneus[$fri_ii] * (1+$fri_Grate_FRevenues/100);
+		//Other_Income (j) = Other_Income (j-1)� (1+ Grate_OIncome /100)
+			$fri_Other_Income[$fri_i] = $fri_Other_Income[$fri_ii] * (1+$fri_Grate_OIncome/100);
+		}
+		$fri_data['FR_'.$fri_i]=$fri_Fixed_Reveneus[$fri_i];
+		$fri_data['OI_'.$fri_i] = $fri_Other_Income[$fri_i];
+		//Tot_Other_Income_LC(j)= Fixed_Revenues (j)+ Other_Income (j)
+		$fri_Tot_Other_Income_LC[$fri_i] = $fri_Fixed_Reveneus[$fri_i] + $fri_Other_Income[$fri_i];
+		$fri_data['TOI_'.$fri_i] = $fri_Tot_Other_Income_LC[$fri_i];
+
+	}
+		$fri_data['sid'] = 1;//setting sid=1
+		$cvd->add($fri_data);
+
+	//********************* Cal Global Investment *****************//
+
+
+
+	$bfd = new Data($caseStudyId,$bfxml);
+
+	$gi_cpData = $plant_Data; //get plant list
+	$gi_excData = $inv_excData;//get exchage rate list
+
+	if(is_array($gi_cpData) && count($gi_cpData) > 0){// check if plant Data exist
+	    foreach($gi_cpData as $gi_row){// for each plant
+			$gi_invData = $aed->getByField($gi_row['id'],'pid');//get investment Data by plant id
+			$gi_Data = '';// intialize & clear Data if any
+			$gi_Data['pid'] = $gi_row['id'];// set pid equal to plant id
+			$gi_GFA[$ahData['startYear']-1]=0;// setting GFA for startyear-1 = zero
+			$gi_TGI = 0;//setting initial Tot Global Investment to zero
+			for($gi_i=$ahData['startYear'];$gi_i <= $ahData['endYear']; $gi_i++){// for each year
+				$gi_globinv = 'GI_'.$gi_i;
+				$gi_fxdasset = 'FA_'.$gi_i;
+				$gi_Data[$gi_globinv] = 0;//set start value to zero
+				for($gi_c = 0; $gi_c < count($allChunks); $gi_c++){
+					$gi_CX = $allChunks[$gi_c];
+					$gi_escinval = 'EI_'.$gi_CX.'_'.$gi_i;
+					$gi_escinv = $gi_invData[$gi_escinval];// get esc investment value for this year
+					if($gi_CX == $baseCurr){ // if currency is base
+						$gi_Data[$gi_globinv] = $gi_Data[$gi_globinv]+$gi_escinv;
+					}else{ //if currency is foreign then multiply with exchange rate
+						$gi_excval = $gi_CX.'_'.$gi_i;
+						$gi_exch = $gi_excData[$gi_excval];//get exchage rate for this currency for this year
+						$gi_Data[$gi_globinv] = $gi_Data[$gi_globinv]+($gi_escinv * $gi_exch);// foreign currency * exchange rate
+					}
+				}
+				$gi_GFA[$gi_i] = $gi_GFA[$gi_i-1] + $gi_Data[$gi_globinv];// FA= FA(i-1)+GlobInvestment
+				$gi_Data[$gi_fxdasset] = $gi_GFA[$gi_i];//fixed asset value parsed to Data
+				$gi_TGI = $gi_TGI + $gi_Data[$gi_globinv];//Total Global Investment
+			}
+			$gi_Data['TGI']=$gi_TGI;
+			$bfd->add($gi_Data);
+		}
+	}
+
+	//*******************Cal Depreciation **************************//
+
+
+	$ald = new Data($caseStudyId,$alxml);
+	$bgd = new Data($caseStudyId,$bgxml);
+
+	$dp_cpData = $plant_Data; //get plant list
+	$dp_excData = $inv_excData;//get exchage rate list
+
+	if(is_array($dp_cpData) && count($dp_cpData) > 0){
+	    foreach($dp_cpData as $dp_row){
+			$dp_invData = $aed->getByField($dp_row['id'],'pid');//get global investment by plant id
+			$dp_deprData = $ald->getByField($dp_row['id'],'pid');//get depreciation Data by plant id
+			$dp_Data = '';
+			$dp_Data['pid'] = $dp_row['id'];
+			$dp_GFA[$ahData['startYear']-1]=0;// setting GFA for startyear-1 = zero
+			$dp_pworth = $dp_invData['PW_'.$dp_row['id']];
+			//echo $dp_invData['PW_'.$dp_row['id']].'<br>';
+			if($dp_deprData['Type']=='L'){// If option is linear
+				$dp_noyrs = $dp_deprData['LinearYears'];
+				$dp_instalment = $dp_pworth/$dp_noyrs;// pworth/no of years
+				$dp_strtyr = $dp_row['FOyear'];
+				$dp_endyr = $dp_row['FOyear'] + $dp_noyrs -1 ;// FOYEAR+LinearYears-1
+				for($dp_i=$dp_strtyr;$dp_i <= $dp_endyr; $dp_i++){
+					$dp_depreciation[$dp_i] = $dp_instalment;
+					$dp_Data['D_'.$dp_i] = $dp_depreciation[$dp_i];
+				}
+			}elseif($dp_deprData['Type']=='DB'){// If option is Declining balance
+				$dp_deprate = $dp_deprData['DepreciationRate'];
+				$dp_strtyr = $dp_row['FOyear'];
+				$dp_netinvest[$dp_strtyr-1] = $dp_pworth;
+				for($dp_i=$dp_strtyr;$dp_i <= $ahData['endYear']; $dp_i++){
+
+					$dp_depreciation[$dp_i] = $dp_netinvest[$dp_i-1] * $dp_deprate/100;
+					$dp_netinvest[$dp_i] = $dp_netinvest[$dp_i-1] - $dp_depreciation[$dp_i];
+					$dp_Data['D_'.$dp_i] = $dp_depreciation[$dp_i];
+
+				}
+			}elseif($dp_deprData['Type']=='SY'){ //If option is Sum of the years digits
+				$dp_sumyr = $dp_deprData['SumYears'];
+				$dp_strtyr = $dp_row['FOyear'];
+				$dp_endyr = $dp_row['FOyear'] + $dp_sumyr -1;
+				$dp_t = 1;
+				for($dp_i=$dp_strtyr;$dp_i <= $dp_endyr; $dp_i++){
+
+					$dp_sumvalue[$dp_t] = (2 * ($dp_sumyr - $dp_t + 1))/($dp_sumyr * ($dp_sumyr +1));
+					$dp_depreciation[$dp_i] = $dp_sumvalue[$dp_t] * $dp_pworth ;
+					$dp_Data['D_'.$dp_i] = $dp_depreciation[$dp_i];
+					$dp_t ++;
+				}
+			}elseif($dp_deprData['Type']=='DS'){ //If option is Declining switching to linear
+					$dp_declyrs = $dp_deprData['DecliningYears']; //get value for declining years
+					$dp_declrate = $dp_deprData['DecliningRate']/100;// get value for declining rate
+					$dp_strtyr = $dp_row['FOyear'];//define first yr for depreciation
+					$dp_endyr = $dp_strtyr + $dp_declyrs -1;
+					$dp_netinvest2[$dp_strtyr-1] = $dp_pworth;
+				for($dp_i = $dp_strtyr;$dp_i <= $dp_endyr; $dp_i++){
+					$dp_userate = 1/($dp_strtyr + $dp_declyrs - $dp_i);
+					$dp_rate[$dp_i]	= max($dp_declrate,$dp_userate);
+					$dp_depreciation[$dp_i] = $dp_netinvest2[$dp_i-1] * ($dp_rate[$dp_i]/100);
+					$dp_netinvest2[$dp_i] = $dp_netinvest2[$dp_i-1] - $dp_depreciation[$dp_i];
+					$dp_Data['D_'.$dp_i] = $dp_depreciation[$dp_i];
+
+				}
+			}
+			for($dp_j=$ahData['startYear'];$dp_j <= $ahData['endYear']; $dp_j++){
+				$dp_Data2['TN_'.$dp_j] = $dp_Data2['TN_'.$dp_j] + $dp_Data['D_'.$dp_j];//Tot_Dep_LC(j) ~~Tot_Dep_Newplant_LC(j)
+			}
+			$bgd->add($dp_Data);
+		}
+
+	}$dp_Data2['sid'] = 1;//setting sid=1 to find Tot_Dep_LC(j) from xml when required
+		for($dp_k=$ahData['startYear'];$dp_k <= $ahData['endYear']; $dp_k++){
+			$dp_Data2['T_'.$dp_k] = $dep_Dep_Old_Fixed_Asset[$dp_k] + $dep_Dep_Comm_Fixed_Assets_LC[$dp_k] + $dp_Data2['TN_'.$dp_k];
+
+			//Tot_Dep_LC(j) = Dep_Old_Fixed_Asset(j) + Dep_Comm_Fixed_Assets_LC(j) +  Tot_Dep_Newplant_LC(j).
+
+		}
+		$bgd->add($dp_Data2);
+
+
+
+
+
+	//Decommissioning
+	$akd = new Data($caseStudyId,$akxml);
+	$ced = new Data($caseStudyId,$cexml);
+
+	$de_cpData = $plant_Data;// get Data for all plants in this study
+	$de_infData = $caiData;// get inflation index Data
+	$de_excData = $inv_excData;// get exch Data
+
+	if(is_array($de_cpData) && count($de_cpData) > 0){// check if plant exist
+	   $de_Data = '';//intialise & clear the Data set
+	    foreach($de_cpData as $de_row){
+			$de_idData = $akd->getByField($de_row['id'],'pid');// get generalexpense by plant id
+			$de_Data['sid'] = 1;// set pid = plant id
+			$de_pid = $de_row['id'];
+			$de_fund = $de_idData['fund'];
+			$de_syear = $de_idData['startyear'];
+			$de_fyear = $de_idData['deccyear'];
+			$de_dyear = $de_fyear - $de_syear+1;
+			if($de_fund == 'F'){
+				for($de_c = 0; $de_c < count($allChunks); $de_c++){// for each currency [0]=>USD [1]=>JOD
+					$de_CX = $allChunks[$de_c];
+					$de_CY = $de_CX.'_'.$de_syear;
+					$de_PC = $de_pid.'_'.$de_CX;
+					$de_famount[$de_pid.'_'.$de_CX] = $de_idData[$de_CX.'_famount'];
+					$de_decost[$de_pid.'_'.$de_CY] = $de_famount[$de_PC] * $de_infData[$de_CY];
+
+					$de_delcost[$de_pid.'_'.$de_fyear] = $de_decost[$de_pid.'_'.$de_CY] * $de_excData[$de_CY]; //ne koristi se u ovoj rutinii
+
+					$de_Data['DC_'.$de_pid.'_'.$de_CY] = $de_decost[$de_pid.'_'.$de_CY];//Decom_Costs
+					$de_Data['TDC_'.$de_CY] = $de_Data['TDC_'.$de_CY] + $de_Data['DC_'.$de_pid.'_'.$de_CY];//Tot_Decom_Costs
+					//$de_Data['DCL_'.$de_pid.'_'.$de_fyear] = $de_Data['DCL_'.$de_pid.'_'.$de_fyear] + $de_delcost[$de_pid.'_'.$de_fyear];//Decom_cost_lc
+
+
+					$de_fundyear = $de_syear;
+					for($de_d = 1; $de_d <= $de_dyear; $de_d++){// for Decomm years
+						$de_factor = $de_d/($de_dyear);
+
+						$de_Data['DF_'.$de_pid.'_'.$de_CX.'_'.$de_fundyear] =
+						  $de_famount[$de_pid.'_'.$de_CX] * $de_infData[$de_CX.'_'.$de_fundyear] * $de_factor;// decomm_funds(p,c,j)
+
+						$de_Data['TDF_'.$de_CX.'_'.$de_fundyear] =
+						  $de_Data['TDF_'.$de_CX.'_'.$de_fundyear] + ($de_famount[$de_pid.'_'.$de_CX] * $de_infData[$de_CX.'_'.$de_fundyear] * $de_factor);//Tot_Decom_Funds
+
+                    	$de_fundyear2 = $de_fundyear-1;
+
+						$de_Data['ADF_'.$de_CX.'_'.$de_fundyear] =
+						  $de_Data['TDF_'.$de_CX.'_'.$de_fundyear]*$de_excData[$de_CX.'_'.$de_fundyear] - $de_Data['TDF_'.$de_CX.'_'.$de_fundyear2]*$de_excData[$de_CX.'_'.$de_fundyear2] ;//Ann_Decom_Funds mora se uraditi konverzija prije nego se uradi oduzimanje od prethodne god da bi se koristio exchange index od prosle god
+
+                        $de_Data['DF_'.$de_pid.'_'.$de_fundyear] =
+						  $de_Data['DF_'.$de_pid.'_'.$de_fundyear] + ($de_Data['DF_'.$de_pid.'_'.$de_CX.'_'.$de_fundyear]* $de_excData[$de_CX.'_'.$de_fundyear]);
+
+						$de_adfl[$de_fundyear] = $de_Data['ADF_'.$de_CX.'_'.$de_fundyear]; //* $de_excData[$de_CX.'_'.$de_fundyear];
+
+						$de_Data['ADFL_'.$de_fundyear] = $de_Data['ADFL_'.$de_fundyear] + $de_adfl[$de_fundyear];//Ann_Decom_Funds_LC
+						$de_fundyear ++;
+					}
+
+				}
+			}else{	// if trust for decommissioning costs
+				for($de_e = $de_syear; $de_e <= $de_fyear; $de_e++){// for Decomm years
+					for($de_c = 0; $de_c < count($allChunks); $de_c++){
+						$de_CX = $allChunks[$de_c];
+						$de_CY = $de_CX.'_'.$de_e;
+						$de_PC = $de_pid.'_'.$de_CX;
+						$de_famount[$de_pid.'_'.$de_CX] = $de_idData[$de_CX.'_famount'];
+						$de_decost[$de_pid.'_'.$de_CY] = ($de_famount[$de_PC] * $de_infData[$de_CY])/($de_dyear+1);
+						if($de_CX == $baseCurr){
+							$de_dclc[$de_pid.'_'.$de_e] = $de_decost[$de_pid.'_'.$de_CY];
+						}else{
+							$de_dclc[$de_pid.'_'.$de_e] = $de_decost[$de_pid.'_'.$de_CY] * $de_excData[$de_CY];
+						}
+						$de_Data['DCL_'.$de_pid.'_'.$de_e] = $de_Data['DCL_'.$de_pid.'_'.$de_e] + $de_dclc[$de_pid.'_'.$de_e];//Decom_Costs_lc when trust option is set
+					}
+				}
+			}
+			for($de_i=$ahData['startYear'];$de_i <= $ahData['endYear']; $de_i++){// for each year
+				$de_Data['TDCL_'.$de_i] = $de_Data['TDCL_'.$de_i] + $de_Data['DCL_'.$de_pid.'_'.$de_i];//Total_decom_costs_lc
+			}
+		}$ced->add($de_Data);
+	}
+
+	//****** Cal Total O&M Cost ********//
+
+	$bdd = new Data($caseStudyId,$bdxml);
+	$ced_Data = $ced->getByfield(1,'sid');
+
+	$tom_cpData = $plant_Data;// get all Data for plants
+	$tom_caData = $bbd->getall();//get all calculated OM Data
+	$tom_excData = $inv_excData;// get exch Data
+
+	if(is_array($tom_caData) && count($tom_caData) > 0){// check if calculated om Data exist
+		$tom_Data['sid'] = 1;//set SID for storing Data
+		for($tom_i=$ahData['startYear'];$tom_i <= $ahData['endYear']; $tom_i++){// for each study year
+			for($tom_c = 0; $tom_c < count($allChunks); $tom_c++){// for each currency
+				$tom_CX = $allChunks[$tom_c];
+				$tom_ETC = 'E_'.$tom_CX.'_'.$tom_i;
+				$tom_CY = $tom_CX.'_'.$tom_i;
+				foreach($tom_caData as $tom_row){
+					$tom_Data[$tom_ETC] = $tom_Data[$tom_ETC]+$tom_row[$tom_ETC];// Tot_OM_cost(c,j) Current
+					$tom_Data[$tom_CY] = $tom_Data[$tom_CY]+$tom_row[$tom_CY];// Tot_ OM_cost(c,j) without inflation
+					if($tom_CX == $baseCurr){
+						$tom_share[$tom_i] = $tom_row[$tom_ETC];
+					}else{
+						$tom_share[$tom_i] = $tom_row[$tom_ETC] * $tom_excData[$tom_CY];
+					}
+					$tom_Data['LC_'.$tom_i] = $tom_Data['LC_'.$tom_i] + $tom_share[$tom_i];// Tot_O&M_Cost_LC
+				}
+			}
+			//O&M & Trust Decom
+			$tom_Data['OMTD_'.$tom_i] = $tom_Data['LC_'.$tom_i] + $ced_Data['TDCL_'.$tom_i];
+		}
+		$bdd->add($tom_Data);
+	}
+
+	//************Cal totalrevenue*************************//
+	$cjd = new Data($caseStudyId,$cjxml);
+
+	$sl_bkData = $bkd->getByField('1','sid');//get total Data
+	$sl_cgData = $cgd->getByField('1','sid');
+	$sl_bdData = $bdd->getByField('1','sid');
+	$sl_beData = $bed->getByField('1','sid');
+	$sl_bzData = $bzd->getByField('1','sid');
+	$sl_ceData = $ced->getByField('1','sid');
+
+	for($rev_i=$ahData['startYear'];$rev_i <= $ahData['endYear']; $rev_i++){
+		//Tot_Revenues_LC(j) = Revenue_Sale_LC(j) + Other_Income_LC(j).   OLD EQ
+		//Tot_Revenues_LC(j) = Revenue_Sale_LC(j) + Tot_Other_Income_LC(j). NEW EQ
+		$rev_Data['R_'.$rev_i] = $sl_bkData['LC_'.$rev_i] + $fri_Tot_Other_Income_LC[$rev_i];
+
+		//Tot_Optcost_LC (j) = Tot_Expenses_Purchase_LC(j)+ Tot_O&M_Cost_LC(j)+ Tot_Fuel_Cost_LC(j)+ Tot_Gen_Exp_LC(j) +Tot_Decom_Costs_LC(j).
+		$rev_Data['O_'.$rev_i] = $sl_cgData['LC_'.$rev_i] + $sl_bdData['LC_'.$rev_i] + $sl_beData['LC_'.$rev_i] + $sl_bzData['LC_'.$rev_i] + $sl_ceData['TDCL_'.$rev_i];
+	}
+	$rev_Data['sid']=1;
+	$cjd->add($rev_Data);
+
+	//************Cal royalty*************************//
+	$ckd = new Data($caseStudyId,$ckxml);
+	$btd = new Data($caseStudyId,$btxml);
+
+	$ryl_cjData = $cjd->getByField('1','sid'); //get total revenue Data
+	$ryl_btData = $btd->getByField('1','sid'); //getroyaltyData
+
+	for($ryl_i=$ahData['startYear'];$ryl_i <= $ahData['endYear']; $ryl_i++){
+	$ryl_ii= $ryl_i-1;
+		if($ryl_btData['C_'.$ryl_i] ==''){
+			$ryl_cost[$ryl_i] = $ryl_cost[$ryl_ii] ;
+		}else{
+			$ryl_cost[$ryl_i] = $ryl_btData['C_'.$ryl_i];
+		}
+		$ryl_tot = $ryl_cjData['R_'.$ryl_i] - (($ryl_cost[$ryl_i]/100) *  $ryl_cjData['O_'.$ryl_i]);//Tot_Revenues_LC(j) - [Roy_%Cost (j) �Tot_Optcost_LC(j)]
+		$ryl_Data['NR_'.$ryl_i] = max(0,$ryl_tot);//Net _Revenues (j) = Maximum {0, Tot_Revenues_LC(j) - [Roy_%Cost (j) �Tot_Optcost_LC(j)]}.
+
+		if($ryl_btData['R_'.$ryl_i] ==''){
+			$ryl_royalty[$ryl_i] = $ryl_royalty[$ryl_ii] ;
+		}else{
+			$ryl_royalty[$ryl_i] = $ryl_btData['R_'.$ryl_i];
+		}
+		$ryl_Data['RLC_'.$ryl_i] = ($ryl_royalty[$ryl_i]/100) * $ryl_Data['NR_'.$ryl_i];// Royalty_LC(j) = Roy_Rate(j)�  Net _Revenues (j)
+
+	}
+	$ryl_Data['sid']=1;
+	$ckd->add($ryl_Data);
+
+	//****************** Cal  Production ***********************//
+
+	$aqd = new Data($caseStudyId,$aqxml);
+	$cfd = new Data($caseStudyId,$cfxml);
+
+	$pro_apData = $plant_Data;
+
+	if(is_array($pro_apData) && count($pro_apData) > 0){
+		$pro_Data = '';//intialise the Data set
+		foreach($pro_apData as $pro_row){
+			$pro_pid = $pro_row['id'];
+			$pro_prod = $pro_row['CurTypeSel'];//
+			$ProChunks = explode(",", $pro_prod);
+			$pro_aqData = $aqd->getByField($pro_row['id'],'pid');
+			for($pro_i=$ahData['startYear'];$pro_i <= $ahData['endYear']; $pro_i++){
+
+				for($pro_c = 0; $pro_c < count($ProChunks); $pro_c++){
+					$pro_PY = $ProChunks[$pro_c].'_'.$pro_i;
+					$pro_pamount = $pro_aqData[$pro_PY];
+					$pro_Data[$ProChunks[$pro_c].'_'.$pro_i] = $pro_Data[$ProChunks[$pro_c].'_'.$pro_i]+$pro_pamount;
+
+				}
+			}
+		}
+		$cfd->add($pro_Data);
+	}
+
+
+	//****************** Foreign exchange module***************//
+	$cld = new Data($caseStudyId,$clxml);
+	$fe_chData = $chd->getByField('1','sid');//cal_totalexport
+	$fe_ciData = $cid->getByField('1','sid');//cal_totalcommloan
+	$fe_caData = $cad->getByField('1','sid');//cal_oldloans
+	$fe_cbData = $cbd->getByField('1','sid');//cal_oldBonds
+	$fe_ccData = $ccd->getByField('1','sid');//cal_Bonds
+	$fe_cdData = $cdd->getByField('1','sid');//cal_Equity
+	$fe_bdData = $sl_bdData;//cal_totalomcost
+	$fe_beData = $sl_beData;//cal_totalfuelcost
+	$fe_bmData = $bmd->getByField('1','sid');//bonds
+	$fe_bvData = $ol_bvData;//old loans
+	$fe_bxData = $bxd->getByField('1','sid');//old bonds
+	$fe_bzData = $sl_bzData;//cal_totalgenexpense
+	$fe_cgData = $sl_cgData;//cal_totalpurchase
+	$fe_bkData = $sl_bkData;//cal_totalsale
+	$fe_excData = $inv_excData;//Exchange Data
+	$fe_Data['sid'] = 1;
+
+	for($fe_c = 0; $fe_c < count($CurChunks); $fe_c++){// for each currency
+		$fe_CX = $CurChunks[$fe_c];
+		for($fe_i=$ahData['startYear'];$fe_i <= $ahData['endYear']; $fe_i++){// for each study year
+			$fe_CY = $fe_CX.'_'.$fe_i;//currencyid_year
+			$fe_CY1 = $fe_CX.'_'.($fe_i-1);//currencyid_lastyear
+			$fe_bval = 'B_'.$fe_CY;//Tot_Export_Credits_Balance(f,j)//New_comm_loans_Balance(f,j)//Old_Bonds_outstand(c,j) //Bonds(f,j)//Old_Bonds(f,j)
+			$fe_lval = 'L_'.$fe_CY;//Old_Loans_outstand(c,j) //Tot_Export_Credits(f,j)//New_comm_loans(f,j)//Old_Loans(f,j)
+			$fe_oval = 'O_'.$fe_CY;//Bonds_Outstand(currency name,j)
+			$fe_eval = 'E_'.$fe_CY;//Equity_Outstand(currency name,j) Tot_O&M_Cost(f,j)  //Tot_Fuel_Cost(f,j) //Tot_Gen_Exp(f,j).
+			$fe_ival = 'I_'.$fe_CY;//Tot_Export_Credits_Interest(f,j)  //New_comm_loans_Interest(f,j)  //Old_Loans_Int ( c,j)//Old_Bonds_Rpay(c,j)
+			$fe_nval = 'N_'.$fe_CY;//New_bonds_Return(c,j)
+			$fe_rval = 'R_'.$fe_CY;//Old_Bonds_Return(c,j) //Tot_Export_Credits_Repay(f,j)//New_comm_loans_Repay(f,j)//Bonds_Repayment (currency name,k)//Old_Loans_Repay
+
+		//Prov_F_Loss(f,j)= {Tot_Export_Credits_Balance(f,j) + New_Comm_Loans_Balance(f,j) + Old_Loans_outstand(f,j) + New_Bonds + Old_Bonds_outstand(f,j)}+Equity_Outstand(f,j) * [Exc_Rate(f,j)- Exc_Rate(f,j-1)]
+
+			$fe_Data['PFL_'.$fe_CY] = ($fe_chData['B_'.$fe_CY1] + $fe_ciData['B_'.$fe_CY1] + $fe_caData['L_'.$fe_CY1] + $fe_cbData['B_'.$fe_CY1] + $fe_ccData['O_'.$fe_CY1] + $fe_cdData['E_'.$fe_CY1] + $cal_loans['B_'.$fe_CY1])*($fe_excData[$fe_CY]-$fe_excData[$fe_CY1]);
+
+            //echo "ADFL for ".$fe_i.":".$de_Data["ADFL_".$fe_i]."<br>";
+
+
+//            echo "fe_chData['B_'.$fe_CY1] " . $fe_chData['B_'.$fe_CY1]."<br>";
+//            echo "fe_ciData['B_'.$fe_CY1] " . $fe_ciData['B_'.$fe_CY1]."<br>";
+//            echo "fe_caData['L_'.$fe_CY1] " . $fe_caData['L_'.$fe_CY1]."<br>";
+//            echo "fe_cbData['B_'.$fe_CY1] " . $fe_cbData['B_'.$fe_CY1]."<br>";
+//            echo "fe_ccData['O_'.$fe_CY1] " . $fe_ccData['O_'.$fe_CY1]."<br>";
+//            echo "fe_cdData['E_'.$fe_CY1] " . $fe_cdData['E_'.$fe_CY1]."<br>";
+//            echo "cal_loans['B_'.$fe_CY1] " . $cal_loans['B_'.$fe_CY1]."<br>";
+
+
+			$fe_Data['PFLY_'.$fe_i] = $fe_Data['PFLY_'.$fe_i] + $fe_Data['PFL_'.$fe_CY] ;//Prov_F_Loss_LC(j)
+		//F_Outstanding(f,j) = Tot_Export_Credits_Balance(f,j) + New_Comm_Loans_Balance(f,j) + Old_Loans_outstand(f,j)+ Old_Bonds_outstand(f,j) + Bonds_Outstand(f,j) Equity_Outstand(f,j).
+
+			$fe_Data['O_'.$fe_CY] = $fe_chData[$fe_bval] + $fe_ciData[$fe_bval] + $fe_caData[$fe_lval] + $fe_cbData[$fe_bval] + $fe_ccData[$fe_oval] + $fe_cdData[$fe_eval];
+
+		//F_OptCost(f,j)=Tot_O&M_Cost(f,j)+Tot_Fuel_Cost(f,j)+Tot_Gen_Exp(f,j).
+
+			$fe_Data['OC_'.$fe_CY] = $fe_bdData[$fe_eval] + $fe_beData[$fe_eval] + $fe_bzData[$fe_eval];
+
+		//F_Loans_Bonds_Interest(f,j)= Tot_Export_Credits_Interest(f,j)+ New_Comm_Loans_Interest(f,j)+ New_Bonds_Return(f,j)+ Old_Loans_Int( c,j)+ Old_Bonds_Return (c,j).
+
+			$fe_Data['LBI_'.$fe_CY] = $fe_chData[$fe_ival] + $fe_ciData[$fe_ival] + $fe_ccData[$fe_nval]+ $fe_caData[$fe_ival] + $fe_cbData[$fe_rval];
+
+		//F_Loans_Bonds_Repay(f,j)= Tot_Export_Credits_Repay(f,j)+ New_Comm_Loans_Repay(f,j)+ Bonds_Repay(f,j)+ Old_Loans_Repay(f,j)+ Old_Bonds_Repay(c,j).
+
+			$fe_Data['LBR_'.$fe_CY] = $fe_chData[$fe_rval] + $fe_ciData[$fe_rval] + $fe_ccData[$fe_rval]+ $fe_caData[$fe_rval] + $fe_cbData[$fe_ival];
+
+		//F_Net_Revenues(f,j)=Revenue_Sale(f,j) - Expenses_Purchase(f,j)
+			$fe_rsval = 'RS_'.$bo_CY;// Revenue_Sale(C,j)
+			$fe_epval = 'EP_'.$bo_CY;// Expenses_Purchase(C,j)
+
+			$fe_Data['NR_'.$fe_CY] = $fe_bkData[$fe_rsval] - $fe_cjData[$fe_epval];
+
+		//F_Loans_Bonds(f,j)=Tot_Export_Credits(f,j)+New_Comm_Loans(f,j)+Bonds(f,j)+ Old_Loans(f,j)+ Old_Bonds(f,j)+
+
+			$fe_Data['LB_'.$fe_CY] = $fe_chData[$fe_lval] + $fe_ciData[$fe_lval] + $fe_bmData[$fe_bval]+ $fe_bvData[$fe_lval] + $fe_bxData[$fe_bval];
+
+		//F_Cash_Balance(f,j)= F_Loans_Bonds(f,j) + Equity(f,j)+F_Net_Revenues(f,j)-F_Invest(f,j) - F_Loans_Bonds_Repay(f,j) - Equity_Returned(f,j)-F_Loans_Bonds_Interest(f,j) - F_OptCost(f,j) - Dividened(f,j) - Tot_Export_Credit1_Fee(f,j) - Tot_Export_Credit2_Fee(f,j).
+
+		}
+
+	}
+
+
+	/*************2.2.15.	Sources and Application of funds --Drawdown of loans from the Stand-by facility and interests on it ***************************/
+	//************Short-term deposits computations*******************************/
+	//************Computation of Dividend on Equity ************************/
+
+
+
+	$bsd = new Data($caseStudyId,$bsxml);
+	$cnd = new Data($caseStudyId,$cnxml);
+
+	$fi_aaData = $aad->getByField('1','sid');
+	$fi_acData = $inv_excData;
+	$fi_adData = $caiData;
+	$fi_agData = $agd->getByField('1','sid');
+	$fi_atData = $vat_atData;
+	$fi_bgData = $bgd->getByField('1','sid');
+	$fi_boData = $ol_boData;
+	$fi_caData = $fe_caData;
+	$fi_cbData = $fe_cbData;
+	$fi_ccData = $fe_ccData;
+	$fi_cdData = $fe_cdData;
+	$fi_ceData = $sl_ceData;
+	$fi_chData = $fe_chData;
+	$fi_ciData = $fe_ciData;
+	$fi_cjData = $ryl_cjData;
+	$fi_ckData = $ckd->getByField('1','sid');
+
+	$fi_bsData = $bsd->getByField('1','sid');
+	$fi_cmData = $cmd->getByField('1','sid');
+	$fi_brData = $brd->getByField('1','sid');
+
+	$fi_Short_Deposits_Balance_LC[$ahData['startYear']-1] = $fi_aaData['ShortTermDeposits'];
+	for($fi_i=$ahData['startYear'];$fi_i <= $ahData['endYear']; $fi_i++){// for each study year
+		$fi_ii = $fi_i-1;
+		If($fi_atData['TaxType']=='SR'){
+			$fi_Income_Tax_rate[$fi_i] = $fi_atData['SteadyTaxRate'];
+		}else{
+			if($fi_atData['Y_'.$fi_i] ==''){
+				$fi_Income_Tax_rate[$fi_i] = $fi_Income_Tax_rate[$fi_ii] ;
+			}else{
+				$fi_Income_Tax_rate[$fi_i] = $fi_atData['Y_'.$fi_i];
+			}
+		}
+
+		$fi_Tot_Comm_Loans_LC[$fi_i] = $fi_ciData['LLC_'.$fi_i] + $ol_Data['LNL_'.$fi_i] + $cal_loans['TD_'.$fi_i];
+
+		$fi_Tot_Bonds_LC[$fi_i] = $fi_ccData['BLC_'.$fi_i] + $ob_Data['BDL_'.$fi_i];
+
+		if($fi_i==$ahData['startYear']){
+
+			//Short_Deposits_Int_LC(First_Year) = Init_Short_Deposit �[Inf_Rate(j)+ Spread_Short_Int_Deposit]
+			$fi_Short_Deposits_Int_LC[$fi_i] = $fi_aaData['ShortTermDeposits'] * ($fi_adData['I_'.$baseCurr.'_'.$fi_i] + $fi_boData['STDeposit'])/100;
+
+			//Short_Loans_LC_Interest(First_year)= Short_Loans_Outstand_Initial �[Inf_Rate(j)+ Spread_Short_Int_Loan].
+			$fi_Short_Loans_LC_Interest[$fi_i] = $fi_boData['SLInitial'] *($fi_adData['I_'.$baseCurr.'_'.$fi_i] + $fi_boData['SBFacility'])/100;
+
+//echo "fi_Short_Loans_LC_Interest[fi_i]" . $fi_Short_Loans_LC_Interest[$fi_i]."<br>";
+
+////////////////////////////////////////******************************************************************************
+			//Tot_Interest_LC(j)= Old_Loans_Int_LC(j) + Old_Bonds_Return_LC(j)+Tot_Export_Credits_Interest_LC(j) + New_Loans_Interest_LC(j)+ New_Bonds_Return_LC + Short_Loans_LC_Interest(j)
+			$fi_Tot_Interest_LC[$fi_i] = $fi_caData['IL_'.$fi_i] + $fi_cbData['IL_'.$fi_i] + $fi_chData['ILC_'.$fi_i] + $fi_ciData['ILC_'.$fi_i] + $fi_ccData['NLC_'.$fi_i] + $fi_Short_Loans_LC_Interest[$fi_i];
+
+			//Taxable_Income_LC(j) = Tot_Revenues_LC(j) + Short_Deposits_Int_LC(j)  - Tot_Optcost_LC(j) - Tot_Interest_LC(j) - Exc_Loss_LC(j) -Ann_Decom_Funds_LC(j) - Tot_Dep_LC(j) - Royalty_LC(j) - Tot_Export_Credit_Fee_LC(j)
+			$fi_Taxable_Income_LC[$fi_i] = $fi_cjData['R_'.$fi_i] + $fi_Short_Deposits_Int_LC[$fi_i] - $fi_cjData['O_'.$fi_i] - $fi_Tot_Interest_LC[$fi_i] - $fe_Data['PFLY_'.$fi_i]-$fi_ceData['ADFL_'.$fi_i]-$dp_Data2['T_'.$fi_i]- $fi_ckData['RLC_'.$fi_i] - $fi_chData['FLC_'.$fi_i];
+
+
+						// NEW Formula for tax calculation
+			if($fi_atData['TaxLossForward']=='Y'){
+	//		//	$fi_Cum_Taxable_Income_LC[$fi_i] = $fi_atData['LossBaseYear'] + $fi_Taxable_Income_LC[$fi_i];
+	//		//	$fi_Income_Tax_LC[$fi_i] = ($fi_Income_Tax_rate[$fi_i]/100) * max(0, min($fi_Taxable_Income_LC[$fi_i], $fi_Cum_Taxable_Income_LC[$fi_i]));
+			  $fi_Cum_Taxable_Income_LC[$fi_i] = $fi_aaData['RetainedEarning'] + $fi_Taxable_Income_LC[$fi_i];
+			  $fi_Net_Taxable_Income_LC[$fi_i] = max(0, $fi_Taxable_Income_LC[$fi_i] - $fi_atData['LossBaseYear']);
+				$fi_TLCF_LC[$fi_i] = $fi_atData['LossBaseYear'] - $fi_Taxable_Income_LC[$fi_i] + $fi_Net_Taxable_Income_LC[$fi_i];
+				$fi_Income_Tax_LC[$fi_i] = ($fi_Income_Tax_rate[$fi_i]/100) * max(0, $fi_Net_Taxable_Income_LC[$fi_i]);
+
+			}else{
+				$fi_Income_Tax_LC[$fi_i] = ($fi_Income_Tax_rate[$fi_i]/100) * max(0, $fi_Taxable_Income_LC[$fi_i]);
+				$fi_Cum_Taxable_Income_LC[$fi_i] = $fi_Taxable_Income_LC[$fi_i];
+			}
+
+		    //Retained_Earn_LC(j)= Taxable_Income_LC(j) - Income_Tax_LC(j) - Dividend_LC(j).
+			$fi_Retained_Earn_LC_BD[$fi_i] = $fi_Taxable_Income_LC[$fi_i] - $fi_Income_Tax_LC[$fi_i];
+
+			//================================================================
+			if($fi_Cum_Taxable_Income_LC[$fi_i] >0){
+					//Dividend_Possible(currency name, j)= {[Taxable_Income_LC(j)-Income_Tax_LC(j)+Min(0, Cum_Retained_Earn(j))] � Equity_Share(currency,j)} / Exc_Rate(currency name,j).
+					//$fi_minretainearn = min(0, $fi_Cum_Retained_Earn_LC[$fi_i-1]);
+
+					$fi_minretainearn = min(0, $fi_aaData['RetainedEarning']);
+
+				//	$fi_Dividend_Possible[$fi_i]=max (0,$fi_Taxable_Income_LC[$fi_i]-$fi_Income_Tax_LC[$fi_i] + $fi_minretainearn) ;
+					$fi_Dividend_Possible[$fi_i]=$fi_Taxable_Income_LC[$fi_i]-$fi_Income_Tax_LC[$fi_i] + $fi_minretainearn ;
+						if ($fi_Dividend_Possible[$fi_i] < 0) {
+						$fi_Dividend_Possible[$fi_i]=0;
+							}
+//
+					//Dividend (currency name, j) = Minimum [Dividend_Due(currency name, j), Dividend_possible(currency name, j)].
+					$fi_Dividend[$fi_i] =   min ($eq_totout[$fi_i]  *  $eq_drateval/100, $fi_Dividend_Possible[$fi_i]);
+//					$fi_Tot_Dividend_LC[$fi_i] = $fi_Tot_Dividend_LC[$fi_i] + $fi_Dividend[$fi_i];
+					$fi_Data['Div_'.$fi_i]=  $fi_Dividend[$fi_i];
+
+				}else{
+					$fi_Dividend[$fi_i] = 0;
+					$fi_Data['Div_'.$fi_i]= 0;
+
+				}
+
+			 $fi_Tot_Dividend_LC[$fi_i] = $fi_Dividend[$fi_i];  //  $fi_Tot_Dividend_LC[$fi_i-1] + $fi_Dividend[$fi_i];
+
+
+			//===============================================================================================
+			//$fi_Tot_Dividend_LC[$fi_i] = max(0, $fi_Retained_Earn_LC_BD[$fi_i]  *  $eq_drateval/100);
+
+			$fi_Retained_Earn_LC[$fi_i] = $fi_Retained_Earn_LC_BD[$fi_i] - $fi_Tot_Dividend_LC[$fi_i];
+
+			// Cum_Retained_Earn_LC(j) =  Init_Retained_Earnings_LC +Retained_Earn_LC(j).
+			$fi_Cum_Retained_Earn_LC[$fi_i] =  $fi_aaData['RetainedEarning'] + $fi_Retained_Earn_LC[$fi_i];
+
+
+
+			//Pre_Investment_Cash_LC (j) = Tot_Revenues_LC(j) - Tot_Optcost_LC (j) - Royalty_LC(j) - Income_Tax_LC(j).
+			$fi_Pre_Investment_Cash_LC[$fi_i] = $fi_cjData['R_'.$fi_i] -$fi_cjData['O_'.$fi_i]-$fi_ckData['RLC_'.$fi_i]-$fi_Income_Tax_LC[$fi_i];
+
+			//Funds_Arranged(j) = Pre_Investment_Cash_LC (j) + Con_Contribution_Inc_LC(j) + Con_Deposits_Inc_LC(j) + Short_Deposits_Int_LC(j) + Init_Short_Deposit + New_Equity_LC(j) + New_Bonds_LC(j) +
+			//Tot_Export_Credits_LC(j) + New_Comm_Loans_LC(j).
+			$fi_Funds_Arranged[$fi_i] = $fi_Pre_Investment_Cash_LC[$fi_i] + $fi_bsData['C_'.$fi_i] + $fi_bsData['D_'.$fi_i] + $fi_Short_Deposits_Int_LC[$fi_i] + $fi_aaData['ShortTermDeposits'] + $fi_cdData['N_'.$fi_i] + $fi_Tot_Bonds_LC[$fi_i] + $fi_Tot_Comm_Loans_LC[$fi_i] + $fi_chData['LLC_'.$fi_i] /*+ $fi_chData['LLC_'.$fi_i]*/;   //added   $fi_chData['LLC_'.$fi_i]   term to this eq.
+
+			//Tot_Repay_LC(j) = Old_Bonds_Repay_LC(j)+Old_Loans_Reapy_LC(j) + Tot_Export_Credits_Repay_LC(j) + New_Comm_Loans_Repay_LC(j)+New_Bonds_Repay_LC(j)+
+			$fi_Tot_Repay_LC[$fi_i] = $fi_cbData['RL_'.$fi_i] + $fi_caData['RL_'.$fi_i] + $fi_chData['RLC_'.$fi_i] + $fi_ciData['RLC_'.$fi_i]+$fi_ccData['RLC_'.$fi_i];
+
+//            echo "total repayment RLC<br>";
+//            echo "year " . $fi_i . " " . $fi_chData['RLC_'.$fi_i]."<br>";
+
+
+			//Funds_Applied(j)= Global_Invest_LC(j) + Tot_Interest_LC(j) + Tot_Repay_LC(j) + Tot_Equity_Repay_LC(j) + Tot_Dividend_LC(j) + VAT_TBR(j) + Tot_Decom_Costs_LC(j)?? + Tot_Export_Credit_Fee_LC(j)
+			$fi_Funds_Applied[$fi_i] = $fi_agData['GIL_'.$fi_i] + $fi_Tot_Interest_LC[$fi_i] + $fi_Tot_Repay_LC[$fi_i] + $fi_cdData['E_'.$fi_i] + $fi_Tot_Dividend_LC[$fi_i] + $bs_aaData['Receivables'] + $fi_ceData['TDCL_'.$fi_i] + $fi_chData['FLC_'.$fi_i];
+
+			//Cash_Available_LC(j) = Funds_Arranged(j) - Funds_Applied(j)
+			$fi_Cash_Available_LC[$fi_i] = $fi_Funds_Arranged[$fi_i] - $fi_Funds_Applied[$fi_i];
+
+			//Short_Loans_LC(First_year) = Max(-Cash_Available_LC(First_year), - Short_Loans_Outstanding_Initial).
+			$fi_Short_Loans_LC[$fi_i] = max(-$fi_Cash_Available_LC[$fi_i], -$fi_boData['SLInitial']);
+			$fi_Short_Deposits_LC[$fi_i] = $fi_Cash_Available_LC[$fi_i] + $fi_Short_Loans_LC[$fi_i] - $fi_Short_Deposits_Balance_LC[$fi_ii];
+			//////
+			$fi_Short_Deposits_Balance_LC[$fi_i] = $fi_Short_Deposits_LC[$fi_i] + $fi_Short_Deposits_Balance_LC[$fi_ii];
+
+			//Short_Loans _Outstand_LC(First_year) = Short_Loans_Outstand_Initial + Short_Loans_LC(j)
+			$fi_Short_Loans_Outstand_LC[$fi_i] = $fi_boData['SLInitial'] + $fi_Short_Loans_LC[$fi_i];
+
+			//	Short_Loans_Repay_LC(j) = max(0,- Short_Loans_LC(j))
+			$fi_Short_Loans_Repay_LC[$fi_i] =  max(0,$fi_Short_Loans_LC[$fi_i]);
+
+			//Tot_Sources_LC(j) = Pre_Investment_Cash_LC (j)+ Con_Contribution_Inc_LC(j)+ Con_Deposits_Inc_LC(j)+ Short_Deposits_Int_LC(j)+ Short_Deposits_Balance_Initial+New_Equity_LC(j)+ New_Bonds_LC(j)
+			//+ Tot_Export_Credits_LC(j)+New_Comm_Loans_LC(j) + Short_Loans_LC(j)
+			$fi_Tot_Sources_LC[$fi_i] = $fi_Pre_Investment_Cash_LC[$fi_i]+ $fi_bsData['C_'.$fi_i]+ $fi_bsData['D_'.$fi_i]+ $fi_Short_Deposits_Int_LC[$fi_i] + $fi_aaData['ShortTermDeposits'] + $fi_cdData['N_'.$fi_i] + $fi_Tot_Bonds_LC[$fi_i] + $fi_Tot_Comm_Loans_LC[$fi_i] + $fi_chData['LLC_'.$fi_i] + $fi_Short_Loans_LC[$fi_i];
+
+
+		}else{
+			//Short_Deposits_Int_LC(j) = Short_Deposits_Balance_LC(j-1)�[Inf_Rate(j)+ Spread_Short_Int_Deposit].
+			$fi_Short_Deposits_Int_LC[$fi_i] = $fi_Short_Deposits_Balance_LC[$fi_ii] *($fi_adData['I_'.$baseCurr.'_'.$fi_i] + $fi_boData['STDeposit'])/100;
+			//Short_Loans_LC_Interest(j)= Short_Loans_Outstand_LC(j-1)*[Inf_Rate(j)+ Spread_Short_Int_Loan]
+			$fi_Short_Loans_LC_Interest[$fi_i] = $fi_Short_Loans_Outstand_LC[$fi_ii] *($fi_adData['I_'.$baseCurr.'_'.$fi_i] + $fi_boData['SBFacility'])/100;
+
+            //Tot_Interest_LC(j)= Old_Loans_Int_LC(j) + Old_Bonds_Return_LC(j)+Tot_Export_Credits_Interest_LC(j) + New_Loans_Interest_LC(j)+ New_Bonds_Return_LC + Short_Loans_LC_Interest(j)
+			$fi_Tot_Interest_LC[$fi_i] = $fi_caData['IL_'.$fi_i] + $fi_cbData['IL_'.$fi_i] + $fi_chData['ILC_'.$fi_i] + $fi_ciData['ILC_'.$fi_i] + $fi_ccData['ILC_'.$fi_i] + $fi_Short_Loans_LC_Interest[$fi_i] + $cal_loans['TI_'.$fi_i];
+
+
+//echo "interest<br>";
+//echo $fi_i . " " . $fi_Tot_Interest_LC[$fi_i]."<br>";
+//echo  'IL_'.$fi_i . " " . $fi_caData['IL_'.$fi_i]."<br>";
+//echo  'IL_'.$fi_i . " " .  $fi_cbData['IL_'.$fi_i]."<br>";
+//echo  'ILC_'.$fi_i . " " . $fi_chData['ILC_'.$fi_i]."<br>";
+//echo  'ILC_'.$fi_i . " " . $fi_ciData['ILC_'.$fi_i]."<br>";
+//echo  'ILC_'.$fi_i . " " . $fi_ccData['ILC_'.$fi_i]."<br>";
+//echo  $fi_i . " " . $fi_Short_Loans_LC_Interest[$fi_i]."<br>";
+//echo  'TI_'.$fi_i . " " . $cal_loans['TI_'.$fi_i]."<br>";
+//
+
+			//Taxable_Income_LC(j) = Tot_Revenues_LC(j) - Tot_Optcost_LC(j)- Tot_Dep_LC(j)  - Tot_Interest_LC(j) + Short_Deposits_Int_LC(j)  - Royalty_LC(j) - Exc_Loss_LC(j) - Ann_Decom_Funds_LC(j) - Tot_Export_Credit_Fee_LC(j)
+			$fi_Taxable_Income_LC[$fi_i] = $fi_cjData['R_'.$fi_i] - $fi_cjData['O_'.$fi_i] -$dp_Data2['T_'.$fi_i] - $fi_Tot_Interest_LC[$fi_i] + $fi_Short_Deposits_Int_LC[$fi_i] - $fi_ckData['RLC_'.$fi_i]
+			- $fe_Data['PFLY_'.$fi_i] - $fi_ceData['ADFL_'.$fi_i] - $fi_chData['FLC_'.$fi_i];
+
+
+			if($fi_atData['TaxLossForward']=='Y'){
+				$fi_Cum_Taxable_Income_LC[$fi_i] = $fi_Cum_Taxable_Income_LC[$fi_ii] + $fi_Taxable_Income_LC[$fi_i];
+
+				$fi_Net_Taxable_Income_LC[$fi_i] = max(0, $fi_Taxable_Income_LC[$fi_i] - $fi_TLCF_LC[$fi_i-1]);
+				$fi_TLCF_LC[$fi_i] = $fi_TLCF_LC[$fi_i-1] - $fi_Taxable_Income_LC[$fi_i] + $fi_Net_Taxable_Income_LC[$fi_i];
+
+				$fi_Income_Tax_LC[$fi_i] = ($fi_Income_Tax_rate[$fi_i]/100) * max(0, $fi_Net_Taxable_Income_LC[$fi_i]);
+
+			}else{
+				$fi_Income_Tax_LC[$fi_i] = ($fi_Income_Tax_rate[$fi_i]/100) * max(0, $fi_Taxable_Income_LC[$fi_i]);
+				$fi_Cum_Taxable_Income_LC[$fi_i] = $fi_Taxable_Income_LC[$fi_i];
+
+			}
+			//Pre_Investment_Cash_LC (j) = Tot_Revenues_LC(j) - Tot_Optcost_LC (j) - Royalty_LC(j) - Income_Tax_LC(j).
+			$fi_Pre_Investment_Cash_LC[$fi_i] = $fi_cjData['R_'.$fi_i] - $fi_cjData['O_'.$fi_i] - $fi_ckData['RLC_'.$fi_i] - $fi_Income_Tax_LC[$fi_i];
+
+			//Funds_Arranged(j) = Pre_Investment_Cash_LC (j) + Con_Contribution_Inc_LC(j) + Con_Deposits_Inc_LC(j) + Short_Deposits_Int_LC(j) + Short_Deposits_Balance_LC(j-1) + New_Equity_LC(j) +
+			//New_Bonds_LC(j)  +  Tot_Export_Credits_LC(j)  +  New_Comm_Loans_LC(j),
+			$fi_Funds_Arranged[$fi_i] = $fi_Pre_Investment_Cash_LC[$fi_i] + $fi_bsData['C_'.$fi_i] + $fi_bsData['D_'.$fi_i] + $fi_Short_Deposits_Int_LC[$fi_i] +  $fi_Short_Deposits_Balance_LC[$fi_ii] + $fi_cdData['N_'.$fi_i] + $fi_Tot_Bonds_LC[$fi_i] + $fi_Tot_Comm_Loans_LC[$fi_i] + $fi_chData['LLC_'.$fi_i];
+
+
+			//$fi_Tot_Repay_LC = Old_Bonds_Repay_LC(j)+Old_Loans_Reapy_LC(j) + Tot_Export_Credits_Repay_LC(j) + New_Comm_Loans_Repay_LC(j)+New_Bonds_Repay_LC(j) + New_Commercial_Loans_Repay
+			$fi_Tot_Repay_LC[$fi_i] = $fi_cbData['RL_'.$fi_i] + $fi_caData['RL_'.$fi_i] + $fi_chData['RLC_'.$fi_i] + $fi_ciData['RLC_'.$fi_i] + $fi_ccData['RLC_'.$fi_i] + $cal_loans['TR_'.$fi_i];
+
+
+            echo "repayment<br>";
+echo $fi_i . " " . $fi_Tot_Repay_LC[$fi_i]."<br>";
+echo  'RL_'.$fi_i . " " . $fi_cbData['RL_'.$fi_i] ."<br>";
+echo  'RL_'.$fi_i . " " .   $fi_caData['RL_'.$fi_i]."<br>";
+echo  'RLC_'.$fi_i . " " . $fi_chData['RLC_'.$fi_i]."<br>";
+echo  'RLC_'.$fi_i . " " . $fi_ciData['RLC_'.$fi_i]."<br>";
+echo  'RLC_'.$fi_i . " " . $fi_ccData['RLC_'.$fi_i]."<br>";
+echo  'TR'.$fi_i . " " . $cal_loans['TR_'.$fi_i]."<br>";
+
+
+
+
+
+
+//             echo "total repayment RLC<br>";
+//            echo "year " . $fi_i . " " . $fi_chData['RLC_'.$fi_i]."<br>";
+
+			//Retained_Earn_LC(j)= Taxable_Income_LC(j) - Income_Tax_LC(j) - Dividend_LC(j).
+			$fi_Retained_Earn_LC_BD[$fi_i] = $fi_Taxable_Income_LC[$fi_i] - $fi_Income_Tax_LC[$fi_i];
+
+//			$fi_Tot_Dividend_LC[$fi_i] = max(0, $fe_cdData[$fe_eval][$fi_i]  *  $eq_drateval/100);
+
+/*			$fi_Cum_Taxable_Income_LC[$fi_i]=$fi_Taxable_Income_LC[$fi_i];
+			//Dividend_Possible(currency name, j)={[Taxable_Income_LC(j)-Income_Tax_LC(j)] � Equity_Share(currency,j)} / Exc_Rate(currency name,j).
+			for($fi_c = 0; $fi_c < count($allChunks); $fi_c++){// for each currency
+				$fi_CX = $allChunks[$fi_c];
+
+				if($fi_Cum_Taxable_Income_LC[$fi_i] >0){
+					//Dividend_Possible(currency name, j)= {[Taxable_Income_LC(j)-Income_Tax_LC(j)+Min(0, Cum_Retained_Earn(j))] � Equity_Share(currency,j)} / Exc_Rate(currency name,j).
+					$fi_minretainearn = min(0, $fi_Cum_Retained_Earn_LC[$fi_i]);
+					$fi_Dividend_Possible[$fi_CX.'_'.$fi_i]=$fi_Taxable_Income_LC[$fi_i]-$fi_Income_Tax_LC[$fi_i] + $fi_minretainearn ;
+
+					//Dividend (currency name, j) = Minimum [Dividend_Due(currency name, j), Dividend_possible(currency name, j)].
+					$fi_Dividend[$fi_CX.'_'.$fi_i] =   min ($fi_cdData['D_'.$fi_CX.'_'.$fi_i], $fi_Dividend_Possible[$fi_CX.'_'.$fi_i]);
+					$fi_Tot_Dividend_LC[$fi_i] = $fi_Tot_Dividend_LC[$fi_i] + ($fi_Dividend[$fi_CX.'_'.$fi_i] * $fi_acData[$fi_CX.'_'.$fi_i]);
+					$fi_Data['Div_'.$fi_CX.'_'.$fi_i]= $fi_Dividend[$fi_CX.'_'.$fi_i];
+
+				}else{
+					$fi_Dividend[$fi_CX.'_'.$fi_i] = 0;
+					$fi_Data['Div_'.$fi_CX.'_'.$fi_i]= 0;
+
+				}
+			}
+*/
+
+//testing dividend cal
+
+			if($fi_Cum_Taxable_Income_LC[$fi_i] >0){
+					//Dividend_Possible(currency name, j)= {[Taxable_Income_LC(j)-Income_Tax_LC(j)+Min(0, Cum_Retained_Earn(j))] � Equity_Share(currency,j)} / Exc_Rate(currency name,j).
+					$fi_minretainearn = min(0, $fi_Cum_Retained_Earn_LC[$fi_i-1]);
+				//	$fi_Dividend_Possible[$fi_i]=max (0,$fi_Taxable_Income_LC[$fi_i]-$fi_Income_Tax_LC[$fi_i] + $fi_minretainearn) ;
+					$fi_Dividend_Possible[$fi_i]=$fi_Taxable_Income_LC[$fi_i]-$fi_Income_Tax_LC[$fi_i] + $fi_minretainearn ;
+						if ($fi_Dividend_Possible[$fi_i] < 0) {
+						$fi_Dividend_Possible[$fi_i]=0;
+							}
+//
+					//Dividend (currency name, j) = Minimum [Dividend_Due(currency name, j), Dividend_possible(currency name, j)].
+					$fi_Dividend[$fi_i] =   min ($eq_totout[$fi_i]  *  $eq_drateval/100, $fi_Dividend_Possible[$fi_i]);
+//					$fi_Tot_Dividend_LC[$fi_i] = $fi_Tot_Dividend_LC[$fi_i] + $fi_Dividend[$fi_i];
+					$fi_Data['Div_'.$fi_i]=  $fi_Dividend[$fi_i];
+
+				}else{
+					$fi_Dividend[$fi_i] = 0;
+					$fi_Data['Div_'.$fi_i]= 0;
+
+				}
+
+			 $fi_Tot_Dividend_LC[$fi_i] = $fi_Dividend[$fi_i];  //  $fi_Tot_Dividend_LC[$fi_i-1] + $fi_Dividend[$fi_i];
+
+			 $fi_Retained_Earn_LC[$fi_i] = $fi_Retained_Earn_LC_BD[$fi_i] - $fi_Tot_Dividend_LC[$fi_i];
+
+
+			// Cum_Retained_Earn_LC(j)= Cum_Retained_Earn_LC(j-1) +Retained_Earn_LC(j).
+			$fi_Cum_Retained_Earn_LC[$fi_i] =  $fi_Cum_Retained_Earn_LC[$fi_ii] + $fi_Retained_Earn_LC[$fi_i];
+
+			//Funds_Applied(j)= Global_Invest_LC(j) + Tot_Interest_LC(j) + Tot_Repay_LC(j) + Tot_Equity_Repay_LC(j) + Tot_Dividend_LC(j) + VAT_TBR(j) + Tot_Export_Credit_Fee_LC(j)
+			$fi_Funds_Applied[$fi_i] = $fi_agData['GIL_'.$fi_i] + $fi_Tot_Interest_LC[$fi_i] + $fi_Tot_Repay_LC[$fi_i] + $fi_cdData['E_'.$fi_i] + $fi_Tot_Dividend_LC[$fi_i] + $fi_cmData['TT_'.$fi_i] + $fi_chData['FLC_'.$fi_i];
+
+			//Cash_Available_LC(j) = Funds_Arranged(j) - Funds_Applied(j)
+			$fi_Cash_Available_LC[$fi_i] = $fi_Funds_Arranged[$fi_i] - $fi_Funds_Applied[$fi_i];
+			//echo  $fi_Funds_Arranged[$fi_i].'-'.$fi_Funds_Applied[$fi_i].'<br>';
+
+			//Short_Loans_LC(j) = Max(-Cash_Available_LC(j), - Short_Loans_Outstand(j-1)).
+			$fi_Short_Loans_LC[$fi_i] = max(-$fi_Cash_Available_LC[$fi_i], -$fi_Short_Loans_Outstand_LC[$fi_ii]);
+
+			//Short_Deposits_LC(j) = Cash_Available_LC(j) + Short_Loans_LC(j) - Short_Deposits_Balance_LC(j-1).
+			$fi_Short_Deposits_LC[$fi_i] = $fi_Cash_Available_LC[$fi_i] + $fi_Short_Loans_LC[$fi_i] - $fi_Short_Deposits_Balance_LC[$fi_ii];
+			//echo $fi_i.'-'.$fi_Cash_Available_LC[$fi_i] .'-'.$fi_Short_Loans_LC[$fi_i].'-'. $fi_Short_Deposits_Balance_LC[$fi_ii].'<br>';
+			//Short_Deposits_Balance_LC(j) = Short_Deposits_LC(j) + Short_Deposits_Balance_LC(j-1)
+			$fi_Short_Deposits_Balance_LC[$fi_i] =  $fi_Short_Deposits_LC[$fi_i] + $fi_Short_Deposits_Balance_LC[$fi_ii];
+			//echo $fi_i.'-'.$fi_Short_Deposits_LC[$fi_i].'-'. $fi_Short_Deposits_Balance_LC[$fi_ii].'<br>';
+			//Short_Loans _Outstand_LC(j)= Short_Loans_Outstand_LC(j-1)+Short_Loans_LC(j),
+			$fi_Short_Loans_Outstand_LC[$fi_i] = $fi_Short_Loans_Outstand_LC[$fi_ii] + $fi_Short_Loans_LC[$fi_i];
+
+			//	Short_Loans_Repay_LC(j) = max(0,- Short_Loans_LC(j))
+			$fi_Short_Loans_Repay_LC[$fi_i] = max(0,-$fi_Short_Loans_LC[$fi_i]);
+
+		   //Tot_Sources_LC(j) = Pre_Investment_Cash_LC (j)+ Con_Contribution_Inc_LC(j)+ Con_Deposits_Inc_LC(j)+ Short_Deposits_Int_LC(j)+ Short_Deposits_Balance_LC(j-1) New_Equity_LC(j)+ New_Bonds_LC(j) + Tot_Export_Credits_LC(j) + New_Comm_Loans_LC(j) + Short_Loans_Repay_LC[$fi_i]
+
+			$fi_Tot_Sources_LC[$fi_i] = $fi_Pre_Investment_Cash_LC[$fi_i] + $fi_bsData['C_'.$fi_i] + $fi_bsData['D_'.$fi_i]+ $fi_Short_Deposits_Int_LC[$fi_i] + $fi_Short_Deposits_Balance_LC[$fi_ii] + $fi_cdData['N_'.$fi_i] + $fi_Tot_Bonds_LC[$fi_i] + $fi_chData['LLC_'.$fi_i] + $fi_Tot_Comm_Loans_LC[$fi_i]/* + $fi_ciData['LLC_'.$fi_i]*/ + max(0,$fi_Short_Loans_LC[$fi_i]);
+
+			//if($fi_Tot_Sources_LC[$fi_i] < 0.0){ // to make sure negative value is not passed
+			//	$fi_Tot_Sources_LC[$fi_i]= 0;
+			//}
+		}
+		$fi_Data['AREL_'.$fi_i] = $fi_Cum_Retained_Earn_LC[$fi_i];
+		$fi_Data['TERL_'.$fi_i]	= $fi_cdData['E_'.$fi_i];//Tot_Equity_Repay_LC(j)
+		$fi_Data['DivL_'.$fi_i]	= $fi_Tot_Dividend_LC[$fi_i];
+		$fi_Data['TaxR_'.$fi_i] = $fi_Income_Tax_rate[$fi_i];
+		$fi_Data['SDIL_'.$fi_i] = $fi_Short_Deposits_Int_LC[$fi_i];
+		$fi_Data['SLLI_'.$fi_i] = $fi_Short_Loans_LC_Interest[$fi_i];
+		$fi_Data['TIL_'.$fi_i] = $fi_Tot_Interest_LC[$fi_i];
+		$fi_Data['CTIL_'.$fi_i] = $fi_Cum_Taxable_Income_LC[$fi_i];
+		$fi_Data['TaxIL_'.$fi_i] = $fi_Taxable_Income_LC[$fi_i];
+		$fi_Data['ITL_'.$fi_i] = $fi_Income_Tax_LC[$fi_i];
+		$fi_Data['PICL_'.$fi_i] = $fi_Pre_Investment_Cash_LC[$fi_i];
+		$fi_Data['FAr_'.$fi_i] = $fi_Funds_Arranged[$fi_i];
+		$fi_Data['TRL_'.$fi_i] = $fi_Tot_Repay_LC[$fi_i];
+		$fi_Data['FAp_'.$fi_i] = $fi_Funds_Applied[$fi_i];
+		$fi_Data['CAL_'.$fi_i] = $fi_Cash_Available_LC[$fi_i];
+		$fi_Data['SLL_'.$fi_i] = $fi_Short_Loans_LC[$fi_i];
+		$fi_Data['SDL_'.$fi_i] = $fi_Short_Deposits_LC[$fi_i];
+		$fi_Data['SDBL_'.($ahData['startYear']-1)] = $fi_Short_Deposits_Balance_LC[$ahData['startYear']-1];
+		$fi_Data['SDBL_'.$fi_i] = $fi_Short_Deposits_Balance_LC[$fi_i];
+		$fi_Data['SLOLC_'.$fi_i] = $fi_Short_Loans_Outstand_LC[$fi_i];
+		$fi_Data['SLRL_'.$fi_i] = $fi_Short_Loans_Repay_LC[$fi_i];
+		$fi_Data['TSL_'.$fi_i] = $fi_Tot_Sources_LC[$fi_i];
+
+		$fi_Data['REL_'.$fi_i] = $fi_Retained_Earn_LC[$fi_i];
+		//Tot_Comm_Loans_LC(j)= New_Comm_Loans_LC(j)+Old_Loans_LC(j)+New_Commercial_Loans_LC(j) (Comm means Project)
+
+		$fi_Data['TCLL_'.$fi_i] = $fi_Tot_Comm_Loans_LC[$fi_i];
+		//  Tot_Bonds_LC(j)=New_Bonds_LC(j)+Old_Bonds_LC(j)
+
+		$fi_Data['TBL_'.$fi_i] = $fi_Tot_Bonds_LC[$fi_i];
+		//Tot_App_LC(j) = Global_Invest_LC(j) + Tot_Interest_LC(j) + Tot_Repay_LC(j) + Short_Loans_Repay_LC(j) + Short_Deposits_Balance_LC(j)+Tot_Equity_Repay_LC(j)+Tot_Dividend_LC(j) + VAT_TBR(j) + Tot_Decom_Costs_LC(j)?? + Tot_Export_Credit1_Fee_LC(j) + Tot_Export_Credit2_Fee_LC(j)
+		$fi_Tot_App_LC[$fi_i] = $fi_agData['GIL_'.$fi_i] + $fi_Tot_Interest_LC[$fi_i] + $fi_Tot_Repay_LC[$fi_i] + $fi_Short_Loans_Repay_LC[$fi_i] + $fi_Short_Deposits_Balance_LC[$fi_i] + $fi_cdData['E_'.$fi_i] + $fi_Tot_Dividend_LC[$fi_i] + $fi_cmData['TT_'.$fi_i] + $fi_ceData['TDCL_'.$fi_i] + $fi_chData['FLC_'.$fi_i];
+
+		$fi_Data['TAL_'.$fi_i] = $fi_Tot_App_LC[$fi_i];
+
+
+		$fi_Data['TLCF_'.$fi_i] = $fi_TLCF_LC[$fi_i];
+		$fi_Data['NTI_'.$fi_i] = $fi_Net_Taxable_Income_LC[$fi_i];
+
+
+		// 2.2.14.1.	Profit/Loss computation
+		//Tot_Expenses_LC(j)= Tot_Optcost_LC (j) + Tot_Interest_LC(j) + Prov_F_Loss_LC(j)+Tot_Dep_LC(j)+ Royalty_LC(j) + Income_Tax_LC(j) + VAT_LC(j)
+		$fi_Tot_Expenses_LC[$fi_i] = $fi_cjData['O_'.fi_i] + $fi_Tot_Interest_LC[$fi_i] + $fe_Data['PFLY_'.$fi_i] + $dp_Data2['T_'.$fi_i] + $fi_ckData['RLC_'.$fi_i] + $fi_Income_Tax_LC[$fi_i];
+
+		//Profit_Loss_LC(j)=Tot_Revenues_LC(j) + Short_Deposits_Int_LC(j) - Tot_Expenses_LC(j).
+		$fi_Profit_Loss_LC[$fi_i] = $fi_cjData['R_'.$fi_i] + $fi_Short_Deposits_Int_LC[$fi_i] - $fi_Tot_Expenses_LC[$fi_i];
+
+		$fi_Data['TEL_'.$fi_i] = $fi_Tot_Expenses_LC[$fi_i];
+		$fi_Data['PLL_'.$fi_i] = $fi_Profit_Loss_LC[$fi_i];
+	}
+	$fi_Data['sid']=1;
+	$cnd->add($fi_Data);
+
+   // die();
+
+//        foreach ($fe_caData as $key=>$value)
+//    {
+//        if (strpos($key, 'IL_2009') === 0) {
+//       echo "fe_caData ". $key ." = ". $value."<br>";
+//    }
+//    }
+//    foreach ($fe_cbData as $key=>$value)
+//    {
+//        if (strpos($key, 'IL_2009') === 0) {
+//       echo "fe_cbData ". $key ." = ". $value."<br>";
+//    }
+//    }
+//
+//        foreach ($fe_chData as $key=>$value)
+//    {
+//        if (strpos($key, 'ILC_2009') === 0) {
+//       echo "fe_chData ". $key ." = ". $value."<br>";
+//    }
+//    }
+//        foreach ($fe_ciData as $key=>$value)
+//    {
+//        if (strpos($key, 'ILC_2009') === 0) {
+//       echo "fe_ciData ". $key ." = ". $value."<br>";
+//    }
+//    }
+//        foreach ($fe_ccData as $key=>$value)
+//    {
+//        if (strpos($key, 'NLC_2009') === 0) {
+//       echo "fe_ccData ". $key ." = ". $value."<br>";
+//    }
+//    }
+//        foreach ($fi_Short_Loans_LC_Interest as $key=>$value)
+//    {
+//        if (strpos($key, '2009') === 0) {
+//       echo "fi_Short_Loans_LC_Interest[2012] ". $key ." = ". $value."<br>";
+//    }
+//    }
+	//die();
+
+
+
+
+	//**************** Get Current_Invest_Costs(C,J)**************//
+
+	$fei_cpData = $plant_Data;
+
+	foreach($fei_cpData as $fei_row){// for each plant
+		$gi_aeData = $aed->getByField($fei_row['id'],'pid');//get investment Data by plant id
+		for($fei_j = 0; $fei_j < count($CurChunks); $fei_j++){// for each currency
+			$fei_CX = $CurChunks[$fei_j];
+			for($fei_i=$ahData['startYear'];$fei_i <= $ahData['endYear']; $fei_i++){// for each study year
+				$fei_CY = $fei_CX.'_'.$fei_i;//currencyid_year
+				$fei_Data[$fei_CY] = $fei_Data[$fei_CY] + $gi_aeData['EI_'.$fei_CY];
+			}
+		}
+	}
+
+	//*******************F_Cash_Balance(f,j)**************//
+	$fei_brData = $brd->getByField('1','sid');
+
+	for($fe_c = 0; $fe_c < count($CurChunks); $fe_c++){// for each currency
+		$fe_CX = $CurChunks[$fe_c];
+		for($fe_i=$ahData['startYear'];$fe_i <= $ahData['endYear']; $fe_i++){// for each study year
+			$fe_CY = $fe_CX.'_'.$fe_i;//currencyid_year
+			// F_Invest(f,j) =    Current_Invest_Costs(f,p,j) + Committed_Invest(f,j)  for all plants
+			$fe_invest[$fe_CY] = $fei_Data[$fe_CY]+ $fe_brData['C_'.$fe_CY];
+			$fe_Data['FI_'.$fe_CY] = $fe_invest[$fe_CY];//F_Invest(f,j)
+			//F_Cash_Balance(f,j)= F_Loans_Bonds(f,j) + Equity(f,j)+F_Net_Revenues(f,j)-F_Invest(f,j) - F_Loans_Bonds_Repay(f,j) - Equity_Returned(f,j)-F_Loans_Bonds_Interest(f,j) - F_OptCost(f,j) - Dividened(f,j) - Tot_Export_Credit_Fee(f,j)
+			//$fe_Data['CB_'.$fe_CY] = $fe_Data['LB_'.$fe_CY] + $fe_cdData['CE_'.$fe_CY]+ $fe_Data['NR_'.$fe_CY] - $fe_invest[$fe_CY] - $fe_Data['LBR_'.$fe_CY] - $fe_cdData['R_'.$fe_CY]-$fe_Data['LBI_'.$fe_CY] - $fe_Data['OC_'.$fe_CY] - $fi_Dividend[$fi_CY] - $fe_chData['TFEE_'.$tex_CY] ;
+			$fe_Data['CB_'.$fe_CY] = $fe_Data['LB_'.$fe_CY] - $fe_Data['FI_'.$fe_CY] - $fe_Data['LBR_'.$fe_CY] - $fe_Data['LBI_'.$fe_CY]- $fe_Data['OC_'.$fe_CY];
+		}
+	}
+
+	$cld->add($fe_Data);
+	/************* 2.2.17.	Balance sheet module  ***********************/
+
+	$bs_aaData = $aad->getByField('1','sid');//balace Data
+	$cpd = new Data($caseStudyId,$cpxml);
+
+	$bs_Data['sid']=1;
+// Init_Tot_Assets=Init_Total_Init_Gross_Fixed_Asset - Init_Cum_depreciation + Init_Con_contribution + Init_Work_inprog +Init_Receivable+Init_Short_Deposit
+	$bs_Init_Tot_Assets = $bs_aaData['GrossFixedAssets'] - $bs_aaData['LessDepreciation'] - $bs_aaData['ConsumerContribution']
+	  + $bs_aaData['WorkProgress'] + $bs_aaData['Receivables'] + $bs_aaData['ShortTermDeposits'];
+	$bs_Data['Init_Tot_Assets'] = $bs_Init_Tot_Assets;
+// Init_Tot_Liabilities=Init_Equity + Init_Retained_Earnings + Init_Net_Bonds_outstand + Init_Net_Loans_outstand + Init_Con_deposits_Decomm_reserve + Init_Current_Maturity
+
+	$bs_Init_Tot_Liabilities = $eq_Data['IE'] + $bs_aaData['RetainedEarning'] + $ob_Data['IOLC'] +  $ol_Data['ILO'] + $bs_aaData['ConsumerDeposits'] + $ob_Data['ICM'];
+	$bs_Data['Init_Tot_Liabilities'] = $bs_Init_Tot_Liabilities;
+	// Check_Initial_Balance = Init_Tot_Assets - Init_Tot_Liabilities
+	$bs_Check_Initial_Balance = $bs_Init_Tot_Assets - $bs_Init_Tot_Liabilities;
+	$bs_Data['Check_Initial_Balance'] = $bs_Check_Initial_Balance;
+
+	$cpd->add($bs_Data);
+
+	/************* Assets Module ***********************/
+	$cod = new Data($caseStudyId,$coxml);
+
+	for($as_i=$ahData['startYear'];$as_i <= $ahData['endYear']; $as_i++){//  for each study year
+	   $as_ii = $as_i-1;
+		if($as_i==$ahData['startYear']){
+			// Gross_Fixed_Assets(First_year) = Init_Gross_Fixed_Asset + Global_Invset(First_year) - Work_inprog_LC(First_year)+ Init_Work_inprog.
+			$as_Gross_Fixed_Assets[$as_i] = $bs_aaData['GrossFixedAssets'] + $fi_agData['GIL_'.$as_i] - $tin_Data['WPL_'.$as_i] + $bs_aaData['WorkProgress'];
+			// Cum_Depreciation(j) =Tot_Dep_LC(j)+Init_Cum_depreciation
+			$as_Cum_Depreciation[$as_i] = $dp_Data2['T_'.$as_i] + $bs_aaData['LessDepreciation'];
+			// Con_contribution(j)= Init_Con_contribution + Con_Contribution_Inc_LC(j),
+			$as_Con_contribution[$as_i] = $bs_aaData['ConsumerContribution'] + $fi_bsData['C_'.$as_i];
+			// Receivable (j) = Init_Receivable+ VAT_TBR(j),
+			$as_Receivable[$as_i] = $bs_aaData['Receivables'] + $fi_cmData['TT_'.$as_i];
+		}else{
+			// Gross_Fixed_Assets(j) = Gross_Fixed_Asset(j-1) + Global_Invset_LC(j) - Work_inprog_LC(j)+ Work_inprog_LC(j-1).
+			$as_Gross_Fixed_Assets[$as_i] = $as_Gross_Fixed_Assets[$as_ii] + $fi_agData['GIL_'.$as_i] - $tin_Data['WPL_'.$as_i] + $tin_Data['WPL_'.$as_ii];
+
+			// Cum_Depreciation(j) =Tot_Dep_LC(j)+ Cum_Depreciation(j-1),
+			$as_Cum_Depreciation[$as_i] = $dp_Data2['T_'.$as_i] + $as_Cum_Depreciation[$as_ii];
+			// Con_contribution(j)= Con_contribution(j-1) + Con_Contribution_Inc_LC(j),
+			$as_Con_contribution[$as_i]= $as_Con_contribution[$as_ii] + $fi_bsData['C_'.$as_i];
+			// Receivable (j) = Receivable (j-1) + VAT_TBR(j),
+			$as_Receivable[$as_i] = $as_Receivable[$as_ii] + $fi_cmData['TT_'.$as_i];
+		}
+		$asel_Data['GFA_'.$as_i] = $as_Gross_Fixed_Assets[$as_i];
+		$asel_Data['CD_'.$as_i] = $as_Cum_Depreciation[$as_i];
+		$asel_Data['CC_'.$as_i] = $as_Con_contribution[$as_i];
+		$asel_Data['R_'.$as_i] = $as_Receivable[$as_i];
+
+
+		// Net_Fixed_Assets(j)=Gross_Fixed_Assets(j) - Cum_Depreciation(j) - Con_Contribution_LC(j)
+		$as_Net_Fixed_Assets[$as_i] = $as_Gross_Fixed_Assets[$as_i] - $as_Cum_Depreciation[$as_i] - $as_Con_contribution[$as_i];
+		// Tot_Assets_LC(j)= Net_Fixed_Assets(j)+ Work_inprog(j) + Receivable(j) + Short_Deposits_Balance_LC (j)
+		$as_Tot_Assets_LC[$as_i] = $as_Net_Fixed_Assets[$as_i] + $tin_Data['WPL_'.$as_i] + $as_Receivable[$as_i] + $fi_Short_Deposits_Balance_LC[$as_i];
+		$asel_Data['NFA_'.$as_i] = $as_Net_Fixed_Assets[$as_i];
+		$asel_Data['TAL_'.$as_i] = $as_Tot_Assets_LC[$as_i];
+	}
+	/*************Equity and Liabilities Module ***********************/
+
+	$el_bsData = $fi_bsData;
+
+$el_Net_Equity_Outstand_LC[$ahData['startYear']-1] = $eq_Data['IE'];
+
+	for($el_i=$ahData['startYear'];$el_i <= $ahData['endYear']; $el_i++){ //  for each study year
+		$el_ii = $el_i+1;//  adding 1 to current year
+		if($el_i==$ahData['startYear']){
+			// Cum_Retained_Earn_LC(j) =  Init_Retained_Earnings_LC +Retained_Earn_LC(j).
+			$el_Cum_Retained_Earn_LC[$el_i] =  $bs_aaData['RetainedEarning'] + $fi_Retained_Earn_LC[$el_i];
+			// Cons_Dep_Decom_Fund_LC(j)  =  Init_Cons_Dep_Decom_Funds_LC + Con_Deposit_Inc_LC(j)+Ann_Decom_Funds_LC (j)
+			$el_Cons_Dep_Decom_Fund_LC[$el_i] = $bs_aaData['ConsumerDeposits'] + $el_bsData['D_'.$el_i] + $de_Data['ADFL_'.$el_i];
+		}else{
+			// Cum_Retained_Earn_LC(j)= Cum_Retained_Earn_LC(j-1) +Retained_Earn_LC(j).
+			$el_Cum_Retained_Earn_LC[$el_i] =  $el_Cum_Retained_Earn_LC[$el_i-1] + $fi_Retained_Earn_LC[$el_i];
+			// Cons_Dep_Decom_Fund_LC(j) = Cons_Dep_Decom_Fund_LC(j-1) + Con_Deposit_Inc_LC(j)+Ann_Decom_Funds_LC (j)
+			$el_Cons_Dep_Decom_Fund_LC[$el_i] = $el_Cons_Dep_Decom_Fund_LC[$el_i-1] + $el_bsData['D_'.$el_i] + $de_Data['ADFL_'.$el_i];
+		}
+
+		$asel_Data['CDDFL_'.$el_i] = $el_Cons_Dep_Decom_Fund_LC[$el_i];
+		//  Net_Equity_Outstand_LC(j) = Tot_Equity_Outstand_LC(j)
+		$el_Net_Equity_Outstand_LC[$el_i] = $eq_totout[$el_i];
+		$asel_Data['NEOL_'.$el_i] = $el_Net_Equity_Outstand_LC[$el_i];
+
+
+		//   Net_Bonds_Outstand_LC(j)= New_Bonds_Outstand_LC(j) - New_Bonds_Repayment_LC(j+1)+ Old_Bonds_Outstand_LC(j) - Old_Bonds_Repay(j+1)
+		$el_Net_Bonds_Outstand_LC[$el_i] = $bo_Data['OLC_'.$el_i] - $bo_Data['RLCN_'.$el_ii]+ $ob_Data['BL_'.$el_i] - $ob_Data['ILN_'.$el_ii];
+		//echo $el_i.'A'.$bo_Data['OLC_'.$el_i] .'B'.$bo_Data['RLCN_'.$el_ii].'C'.$ob_Data['BL_'.$el_i] .'D'. $ob_Data['RL_'.$el_ii].'<br>';
+		$asel_Data['NBOL_'.$el_i] = $el_Net_Bonds_Outstand_LC[$el_i];
+
+
+		//   Net_Loan_Outstand_LC(j) = Tot_Export_Credits_Balance_LC(j) - Tot_Export_Credits_Repay_LC(j+1) + Tot_Comm_Loans_Balance_LC(j) - Tot_Comm_Loans_Repay_LC(j+1)  + Old_Loans_Outstand_LC(j) - Old_Loans_Repay_LC(j+1)
+		$el_Net_Loan_Outstand_LC[$el_i] = $tex_Data['BLC_'.$el_i] - $tex_Data['RLCN_'.$el_ii] + $tcl_Data['BLC_'.$el_i] - $tcl_Data['RLCN_'.$el_ii]  + $ol_Data['LL_'.$el_i] - $ol_Data['RLN_'.$el_ii] + $cal_loans['TO_'.$el_i];
+		$asel_Data['NLOL_'.$el_i] = $el_Net_Loan_Outstand_LC[$el_i];
+
+
+		//  Current_Maturity_LC(j)=.Short_Loans_Outstand_LC(j) +Tot_Export_Credits_Repay_LC(j+1)+ Tot_Comm_Loans_Repay_LC(j+1)+ Old_Loans_Repay_LC(j+1)+ New_Bonds_Repayment_LC(j+1)+ Old_Bonds_Repay(j+1).
+		$el_Current_Maturity_LC[$el_i] = $fi_Short_Loans_Outstand_LC[$el_i] + $tex_Data['RLCN_'.$el_ii] + $tcl_Data['RLCN_'.$el_ii] + $ol_Data['RLN_'.$el_ii]+ $bo_Data['RLCN_'.$el_ii] + $ob_Data['ILN_'.$el_ii] + $cal_loans['TM_'.$el_i];
+
+		$asel_Data['CML_'.$el_i] = $el_Current_Maturity_LC[$el_i];
+
+		//   Tot_Liabilities_LC(j)= Net_Equity_Outstand_LC(j) + Cum_Retained_Earn_LC(j) + Net_Bonds_Outstand_LC(j)+Net_Loan_Outstand_LC(j)+ Cons_Dep_Decom_Fund_LC(j)+ Current_Maturity_LC(j).
+	  $el_Tot_Liabilities_LC[$el_i] = $el_Net_Equity_Outstand_LC[$el_i] + $fi_Cum_Retained_Earn_LC[$el_i] + $el_Net_Bonds_Outstand_LC[$el_i] + $el_Net_Loan_Outstand_LC[$el_i] + $el_Cons_Dep_Decom_Fund_LC[$el_i] + $el_Current_Maturity_LC[$el_i];
+		$asel_Data['TLL_'.$el_i] = $el_Tot_Liabilities_LC[$el_i];
+		//  Tot_Assets_Liabilities_LC(j)= Tot_Assets_LC(j) -Tot_Liabilities_LC(j)
+		$el_Tot_Assets_Liabilities_LC[$el_i] = $as_Tot_Assets_LC[$el_i]- $el_Tot_Liabilities_LC[$el_i];
+		$asel_Data['TALL_'.$el_i] = $el_Tot_Assets_Liabilities_LC[$el_i];
+
+	}
+
+//	$asel_Data['CMBL'] = $fi_boData['SLInitial'] + $ob_Data['IL_'.$ahData['startYear']] + $ol_Data['RL_'.$ol_startyear] + $ol_Data['RLN_'.$ahData['startYear']]; // Current maturity for Intial Balance sheet
+//Current maturity for Intial Balance sheet
+	$asel_Data['CMBL'] =
+		$ob_Data['RL_'.$ahData['startYear']]  /*working, repayment on bonds*/ +
+	  //		$ob_Data['ILN_'.$ahData['startYear']] /*working, interest  on bonds*/ +
+	  $ol_Data['RLN_'.$ahData['startYear']] /*working, repayment on loans*/;// +
+	  //	$ol_Data['IL_'.$ahData['startYear']]  /*working, interest  on loans*/;
+
+$asel_Data['sid']=1;
+	$cod->add($asel_Data);	//  add both asset ,equity&liability module
+
+
+
+	/*************2.2.18.	Project risk analysis module*********/
+
+
+	$f = new Financial;
+	$crd = new Data($caseStudyId,$crxml);
+	$bnd = new Data($caseStudyId,$bnxml);
+	$rk_bnData = $bnd->getByField('1','sid');// balace Data
+
+
+	$rk_L1Year = $rk_bnData['FY_Cash_DebtService'] + $rk_bnData['Loan_Term'];// L1Year = FY_Cash_DebtService+ Loan_Term.
+	$rk_L2Year =  $rk_bnData['FY_Cash_DebtService'] + $rk_bnData['Life_Term'];// L2Year = FY_Cash_DebtService + Life_Term
+
+	$rk_D_Rate = $rk_bnData['DRate']/100;
+	$rk_Security_ratio1 = $rk_bnData['Security_ratio1'];
+	$rk_Security_ratio2 = $rk_bnData['Security_ratio2'];
+
+	for($rk_i=$ahData['startYear'];$rk_i <= $ahData['endYear']; $rk_i++){ //   for each study year
+
+		if($rk_i >$rk_bnData['FY_Cash_DebtService'] and $rk_i <= $rk_L1Year){// Loan_during_Term(k) = Pre_Investment_Cash_LC (k)
+			$rk_Loan_during_Term[$rk_i] = $fi_Data['PICL_'.$rk_i];
+		}else{
+			$rk_Loan_during_Term[$rk_i] = 0;
+		}
+		if($rk_i >$rk_bnData['FY_Cash_DebtService'] and $rk_i <= $rk_L2Year){//  Loan_during_Life(k) = Pre_Investment_Cash_LC (k),  .
+			$rk_Loan_during_Life[$rk_i] = $fi_Data['PICL_'.$rk_i];
+		}else{
+			$rk_Loan_during_Life[$rk_i] = 0;
+		}
+		//$npvtarray[] = $rk_Loan_during_Term[$rk_i];
+		//$npvlarray[] = $rk_Loan_during_Life[$rk_i];
+		$rk_Data['LL_'.$rk_i] = $rk_Loan_during_Life[$rk_i];// Loan_during_Life
+		$rk_Data['LT_'.$rk_i] = $rk_Loan_during_Term[$rk_i];// Loan_during_Term
+	}
+
+	for($rk_j=$ahData['startYear'];$rk_j <= $ahData['endYear']; $rk_j++){ //   for each study year
+		$npvtarray=array();
+		for($rk_m=$rk_j;$rk_m <= $rk_L1Year; $rk_m++){
+			$npvtarray[] = $rk_Loan_during_Term[$rk_m];
+		}
+		$npvlarray=array();
+		for($rk_n=$rk_j;$rk_n <= $rk_L2Year; $rk_n++){
+			$npvlarray[] = $rk_Loan_during_Life[$rk_n];
+		}
+		// Loan_NPV_Term(j) =  NPV (D_Rate/100, Loan_during_Life(j) to � Loan_during_Term(L1Year)),  .
+		$rk_Loan_NPV_Term[$rk_j] = $f->NPV($rk_D_Rate, $npvtarray);
+		//array_splice($npvtarray,0,1);
+		// MX_Fin_Loan(j)= Loan_NPV_Term(j)/Security_ratio1
+		$rk_MX_Fin_Loan[$rk_j] = $rk_Loan_NPV_Term[$rk_j]/$rk_Security_ratio1;
+
+		// Loan_NPV_Life(j) =  NPV (D_Rate/100, Loan_during_Life(j) to ���.. Loan_during_Life(L2Year)),  .
+		$rk_Loan_NPV_Life[$rk_j] = $f->NPV($rk_D_Rate, $npvlarray);
+		//array_splice($npvlarray,0,1);
+		// MX_Fin_Life(j)= Loan_NPV_Life(j)/Security_ratio1
+		$rk_MX_Fin_Life[$rk_j] = $rk_Loan_NPV_Term[$rk_j]/$rk_Security_ratio1;
+
+		$rk_Data['NT_'.$rk_j] = $rk_Loan_NPV_Term[$rk_j];// Loan_NPV_Term
+		$rk_Data['MFLo_'.$rk_j] = $rk_MX_Fin_Loan[$rk_j];// MX_Fin_Loan
+
+		$rk_Data['NL_'.$rk_j] = $rk_Loan_NPV_Life[$rk_j];// Loan_NPV_Life
+		$rk_Data['MFLi_'.$rk_j] = $rk_MX_Fin_Life[$rk_j];// MX_Fin_Life
+	}
+	$rk_Data['sid']=1;
+	$crd->add($rk_Data);
+
+
+
+	/*************2.2.19.	Financial Ratios module************/
+	$ctd = new Data($caseStudyId,$ctxml);
+	$br_agData = $agd->getByField('1','sid');//  get total investment
+
+	for($br_i=$ahData['startYear'];$br_i <= $ahData['endYear']; $br_i++){ //   for each study year
+	//   Working Capital ratio (R1)
+		//  WCapital_Ratio(j)= Net_Equity_Outstand_LC[j]+Cum_Retained_Earn_LC[j] +Net_Bonds_Outstand_LC[j] +Net_Loan_Outstand_LC[j]/max(0.00001,Net_Fixed_Assets(j)+Work_inprog(j) )
+		$br_WCapital_Ratio[$br_i]= ($el_Net_Equity_Outstand_LC[$br_i] + $el_Cum_Retained_Earn_LC[$br_i] + $el_Net_Bonds_Outstand_LC[$br_i] + $el_Net_Loan_Outstand_LC[$br_i])/max(0.00001,($as_Net_Fixed_Assets[$br_i] + $tin_Data['WPL_'.$br_i]) );
+		//  R1(j) = max(0, min{4, WCapital_Ratio(j)})
+		$br_R1[$br_i] = max(0, min(4, $br_WCapital_Ratio[$br_i])) ;
+
+		if($br_WCapital_Ratio[$br_i] < 1){
+			$br_R1_Status[$br_i] = 'PB';
+		}elseif($br_WCapital_Ratio[$br_i] >= 1) {
+			$br_R1_Status[$br_i] = 'OK';
+		}
+
+		$br_Data['WCR_'.$br_i] = $br_WCapital_Ratio[$br_i];
+		$br_Data['R1_'.$br_i] = $br_R1[$br_i];
+		$br_Data['R1S_'.$br_i] = $br_R1_Status[$br_i];
+	//  Leverage ration (R2)
+		//  Leverage(j) = Net_Bonds_Outstand_LC(j) + Net_Loan_Outstand_LC(j)/Net_Equity_Outstand_LC(j) + Cum_Retained_Earn_LC(j)
+		$br_Leverage[$br_i] = ($el_Net_Bonds_Outstand_LC[$br_i] + $el_Net_Loan_Outstand_LC[$br_i])/($el_Net_Equity_Outstand_LC[$br_i] + $el_Cum_Retained_Earn_LC[$br_i]);
+		$br_R2[$br_i] = max(0, min(15, $br_Leverage[$br_i]));
+	    //  R2_Status(j) = PB if Leverage(j) >1.3.
+		//  R2_Status(j) = OK if Leverage(j) <1.3
+		if($br_Leverage[$br_i] > 1.3){
+			$br_R2_Status[$br_i] = 'PB';
+		}elseif($br_Leverage[$br_i] < 1.3) {
+			$br_R2_Status[$br_i] = 'Ok';
+		}
+
+		$br_Data['L_'.$br_i] = $br_Leverage[$br_i];
+		$br_Data['R2_'.$br_i] = $br_R2[$br_i];
+		$br_Data['R2S_'.$br_i] = $br_R2_Status[$br_i];
+	//  Equipment renewal ratio (R3)
+
+		//  Net_Investment(j) = Net_Fixed_Assets(j) + Work_inprog(j)
+		$br_Net_Investment[$br_i] = $as_Net_Fixed_Assets[$br_i] + $tin_Data['WPL_'.$br_i];
+		//  Aggr_Global_Investment(j) = max(0.0001, [Gross_Fixed_Assets(j)+ Work_inprog(j)])
+		$br_Aggr_Global_Investment[$br_i] = max(0.0001, ($as_Gross_Fixed_Assets[$br_i] + $tin_Data['WPL_'.$br_i]));
+		//  Equip_Ren(j) = Net_Investment(j) / Aggr_Global_Investment(j)
+		$br_Equip_Ren[$br_i] = $br_Net_Investment[$br_i] / $br_Aggr_Global_Investment[$br_i];
+		$br_R3[$br_i] = max(0, min(1, $br_Equip_Ren[$br_i]));
+		if($br_R3[$br_i] < 0.5){
+			$br_R3_Status[$br_i] = 'PB';
+		}else{
+			$br_R3_Status[$br_i] = 'Ok';
+		}
+
+		$br_Data['ER_'.$br_i] = $br_Equip_Ren[$br_i];
+		$br_Data['R3_'.$br_i] = $br_R3[$br_i];
+		$br_Data['R3S_'.$br_i] = $br_R3_Status[$br_i];
+
+	//   Gross Profit Ratio (R4)
+
+		//  Gross_Profit (j) = Revenues_Sale_LC(j) - Tot_Optcost_LC (j)
+		$br_Gross_Profit[$br_i] = $sl_bkData['LC_'.$br_i] - $fi_cjData['O_'.$br_i];
+		//  Value_Added (j) = Revenues_Sale_LC(j) - Tot_Expenses_Purchase_LC(j) - Tot_Fuel_Cost_LC(j)
+		$br_Value_Added[$br_i] = $sl_bkData['LC_'.$br_i] - $sl_cgData['LC_'.$br_i] - $sl_beData['LC_'.$br_i];
+		//  Gross_Profit_Ratio(j) = Gross_Profit (j)/max(0.00001, Value_Added (j))
+		$br_Gross_Profit_Ratio[$br_i] = $br_Gross_Profit[$br_i]/(max(0.00001, $br_Value_Added[$br_i]));
+		//  R4(j) = max(0, min{1, Gross_Profit_Ratio(j)})
+		$br_R4[$br_i] = max(0, min(1, $br_Gross_Profit_Ratio[$br_i]));
+		//  R4_Status(j) = PB if R4(j) <0.2
+		if($br_R4[$br_i] < 0.2){
+			$br_R4_Status[$br_i] = 'PB';
+		}else{
+			$br_R4_Status[$br_i] = 'Ok';
+		}
+
+		$br_Data['GPR_'.$br_i] = $br_Gross_Profit_Ratio[$br_i];
+		$br_Data['R4_'.$br_i] = $br_R4[$br_i];
+		$br_Data['R4S_'.$br_i] = $br_R4_Status[$br_i];
+
+	//  Debt Repayment time Ratio (R5)
+		//  Yealy_Cash_Flow(j) = Tot_Revenues_LC(j) - Tot_Optcost_LC (j) - Income_Tax_LC(j) - Royalty_LC(j)
+		$br_Yealy_Cash_Flow[$br_i] = $fi_cjData['R_'.$br_i] - $fi_cjData['O_'.$br_i] - $fi_Income_Tax_LC[$fi_i] - $fi_ckData['RLC_'.$fi_i];
+		//  Debt_Repayment_Time(j) = Net_Bonds_Outstand_LC(j) + Net_Loan_Outstand_LC(j)/max(0.0001, Yealy_Cash_Flow(j))
+		$br_Debt_Repayment_Time[$br_i] = ($el_Net_Bonds_Outstand_LC[$br_i] + $el_Net_Loan_Outstand_LC[$br_i])/max(0.0001, $br_Yealy_Cash_Flow[$br_i]);
+		$br_R5[$br_i] = max(0.2, min(40, $br_Debt_Repayment_Time[$br_i]));
+		if($br_R5[$br_i] > 4){
+			$br_R5_Status[$br_i] = 'PB';
+		}else{
+			$br_R5_Status[$br_i] = 'Ok';
+		}
+
+		$br_Data['DRT_'.$br_i] =$br_Debt_Repayment_Time[$br_i];
+		$br_Data['R5_'.$br_i] = $br_R5[$br_i];
+		$br_Data['R5S_'.$br_i] = $br_R5_Status[$br_i];
+
+	//  Sensitivity to Exchange Rate Ratio (R6)
+		for($br_c = 0; $br_c < count($base1Chunks); $br_c++){//   for each currency
+			$br_CX = $base1Chunks[$br_c];
+			$br_CY = $br_CX.'_'.$br_i;
+			if($br_CX == $baseCurr){
+				//  Local_Cash_LC(j) = Revenue_Sale(c,j) + Short_Deposits_Int_LC(j) - Expenses_Purchase(c,j) -Tot_O&M_Cost(c,j) - Tot_Fuel_Cost(c,j) - Tot_Gen_Exp(c,j) - Income_Tax_LC(j) - Royalty_LC(j) Old_Loans_Int ( c,j)  - Old_Loans_Repay(c,j) - Old_Bonds_Return (c,j)
+				//  -  Old_Bonds_Repay(c,j) - New_Loans_Interest(c,j) - New_Comm_Loans_Repay(c,j) - New_bonds_Return(c,j) - Bonds_Repayment(c,j) - Short_Loans_LC_Interest(j) - Short_Loans_Repay_LC(j)
+				//$br_Local_Cash_LC[$br_i] = $fe_bkData['RS_'.$br_CY] - $br_agData['EI_'.$br_CY] + $fi_Short_Deposits_Int_LC[$fi_i] - $pr_Data2['EP_'.$br_CY] - $tom_Data['E_'.$br_CY] - $tfc_Data['E_'.$br_CY] - $tge_Data['E_'.$br_CY] - $fi_Income_Tax_LC['R_'.$br_CY] - $fi_ckData['RLC_'.$br_i] - $ol_Data['I_'.$br_CY]  - $fe_caData['R_'.$br_CY] -$fe_cbData['R_'.$br_CY] - $fe_cbData['I_'.$br_CY] - $tcl_Data['I_'.$br_CY] - $tcl_Data['R_'.$br_CY] + $bo_Data['B_'.$br_CY] - $bo_Data['R_'.$br_CY] - $fi_Data['SLLI_'.$br_i] - $fi_Data['SLRL_'.$br_i] + $tcl_Data['L_'.$br_CY];
+
+				//  Local_Cash_LC(j) = Revenue_Sale(c,j) - Tot_Loc_invest(c,j)-Tot_Fuel_Cost(c,j)-Tot_O&M_Cost(c,j)- Tot_Gen_Exp(c,j) -Expenses_Purchase(c,j)-Short_Loans_LC_Interest(j)-New_Loans_Interest(c,j)-New_Comm_Loans_Repay(c,j)+ Bonds (currency name,k)+ New_comm_loans(c,j) + Short_Loans_LC[j] - Bonds_Interest(c,j) - Bonds_Repayment (c,k) - Income_Tax_LC(j) - Royalty_LC(j)
+				$br_Local_Cash_LC[$br_i] = $fe_bkData['RS_'.$br_CY] - $br_agData['EI_'.$br_CY] - $tfc_Data['E_'.$br_CY] - $tom_Data['E_'.$br_CY] - $tge_Data['E_'.$br_CY]- $pr_Data2['EP_'.$br_CY]- $fi_Data['SLLI_'.$br_i] - $tcl_Data['I_'.$br_CY] - $tcl_Data['R_'.$br_CY] + $bo_Data['B_'.$br_CY] + $tcl_Data['L_'.$br_CY] + $fi_Data['SLL_'.$br_i] - $bo_Data['I_'.$br_CY] - $bo_Data['R_'.$br_CY] - $fi_Data['ITL_'.$br_i] - $fi_ckData['RLC_'.$br_i] ;
+
+
+				$br_Data['Loc_'.$br_i] = $br_Local_Cash_LC[$br_i];
+			}else{
+
+				//  Req_Foreign_Currencies (f,j) = Expenses_Purchase(f,j) + Tot_O&M_Cost(f,j) + Tot_Fuel_Cost(f,j) + Tot_Gen_Exp(f,j) + Old_Loans_Int(f,j) + Old_Loans_Repay(f,j) + Old_Bonds_Return (f,j) + Old_Bonds_Repay(f,j) + New_Loans_Interest(f,j) +
+				//  New_Comm_Loans_Repay(f,j) - New_bonds_Return(f,j) + Bonds_Reapyment(f,j) +Tot_Export_Credits_Interest(f,j) + Tot_Export_Credits_Repay(f,j) + Tot_Export_Credit1_Fee(f,j) + Tot_Export_Credit2_Fee(f,j) - Revenue_Sale(f,j),
+
+				$br_Req_Foreign_Currencies[$br_CY] = $pr_Data2['EP_'.$br_CY] + $tom_Data['E_'.$br_CY] + $tfc_Data['E_'.$br_CY] + $tge_Data['E_'.$br_CY] + $ol_Data['I_'.$br_CY] + $ol_Data['R_'.$br_CY] +
+				$ob_Data['R_'.$br_CY] + $ob_Data['I_'.$br_CY] + $tcl_Data['I_'.$br_CY] + $tcl_Data['R_'.$br_CY] - $fe_ccData[$fe_nval] + $bo_Data['R_'.$br_CY] +$fe_chData['I_'.$br_CY] + $fe_chData['R_'.$br_CY]
+				+ $tex_Data['TFEE_'.$br_CY] - $fe_bkData['RS_'.$br_CY];
+				$br_Req_Foreign_Currencies_LC[$br_i] =  $br_Req_Foreign_Currencies_LC[$br_i] + ($br_Req_Foreign_Currencies[$br_CY] * $tom_excData[$br_CY]);
+				$br_Data['F_'.$br_CY] = $br_Req_Foreign_Currencies[$br_CY];
+			}
+
+		}
+		$br_Data['For_'.$br_i] = $br_Req_Foreign_Currencies_LC[$br_i];
+		$br_Foreign_Currency_ratio[$br_i] =  $br_Local_Cash_LC[$br_i]/max(0.00001,$br_Req_Foreign_Currencies_LC[$br_i]);
+		$br_R6[$br_i] = max(0.1, min(15, $br_Foreign_Currency_ratio[$br_i]));
+		//  R6_Status(j) = PB if R6(j) < 1.2
+		if($br_R6[$br_i] < 1.2){
+			$br_R6_Status[$br_i] = 'PB';
+		}else{
+			$br_R6_Status[$br_i] = 'Ok';
+		}
+
+		$br_Data['FCR_'.$br_i] = $br_Foreign_Currency_ratio[$br_i];
+		$br_Data['R6_'.$br_i] = $br_R6[$br_i];
+		$br_Data['R6S_'.$br_i] = $br_R6_Status[$br_i];
+		//  Break-even Point for Amount of Electricity Sold (R7)
+
+		//  Revenues_Netof_Fuels_LC(j)= Revenue_Sale_LC(j) - Tot_Fuel_Cost_LC(j) - Tot_Expenses_Purchase__LC(j),
+		$br_Revenues_Netof_Fuels_LC[$br_i] = $sl_Data2['LC_'.$br_i] - $sl_beData['LC_'.$br_i] - $sl_cgData['LC_'.$br_i];
+
+		//  Debt_Service_LC(j) = Tot_Interest_LC(j)+ Tot_Repay_LC(j)  - Short_Deposits_Int_LC(j)        REMOVED + Short_Loans_Repay_LC(j)
+		$br_Debt_Service_LC[$br_i] = $fi_Tot_Interest_LC[$br_i] + $fi_Tot_Repay_LC[$br_i] - $fi_Short_Deposits_Int_LC[$br_i];
+		//  Fixed_Optcost_LC(j) = Tot_Optcost_LC (j) -Tot_Fuel_Cost_LC(j)    CHANGED FROM + -
+		$br_Fixed_Optcost_LC[$br_i] = $fi_cjData['O_'.$br_i] - $sl_beData['LC_'.$br_i];
+		//  Min_Expenditure_LC(j)= Debt_Service(j) + Fixed_Optcost_LC(j),
+		$br_Min_Expenditure_LC[$br_i] = $br_Debt_Service_LC[$br_i] + $br_Fixed_Optcost_LC[$br_i];
+		$br_Break_Even_Point[$br_i] =  $br_Min_Expenditure_LC[$br_i]/max(0.00001,$br_Revenues_Netof_Fuels_LC[$br_i]);
+
+
+		//  R7(j) = max(0.1, min{10, Break_Even_Point(j)})
+		$br_R7[$br_i] = max(0.1, min(10, $br_Break_Even_Point[$br_i]));
+		//  R7_Status(j) = PB if R7(j) >0.8
+		if($br_R7[$br_i] > 0.8){
+			$br_R7_Status[$br_i] = 'PB';
+		}else{
+			$br_R7_Status[$br_i] = 'Ok';
+		}
+
+		$br_Data['BEP_'.$br_i] = $br_Break_Even_Point[$br_i];
+		$br_Data['R7_'.$br_i] = $br_R7[$br_i];
+		$br_Data['R7S_'.$br_i] = $br_R7_Status[$br_i];
+
+		//  Relative Interest Charge Weight (R8)
+		$br_Interest_Charge_Ratio[$br_i] = ($fi_Tot_Interest_LC[$br_i] - $fi_Short_Deposits_Int_LC[$br_i])/max(0.0001,$br_Value_Added[$br_i]);
+
+		//  R8(j) = max(0.01, min{2, Interest_Charge_Ratio (j)})
+		$br_R8[$br_i] = max(0.01, min(2, $br_Interest_Charge_Ratio[$br_i]));
+
+		//  R8_Status(j) = PB if R8(j) >0.2
+		if($br_R8[$br_i] > 0.2){
+			$br_R8_Status[$br_i] = 'PB';
+		}else{
+			$br_R8_Status[$br_i] = 'Ok';
+		}
+		$br_Data['ICR_'.$br_i] = $br_Interest_Charge_Ratio[$br_i];
+		$br_Data['R8_'.$br_i] = $br_R8[$br_i];
+		$br_Data['R8S_'.$br_i] = $br_R8_Status[$br_i];
+
+		//  Global Ratio
+
+		$br_Global_Index[$br_i] = (0.05*$br_R1[$br_i]/1)+(0.20*$br_R2[$br_i]/1.3)+(0.10*$br_R31[$br_i]/0.5)+(0.15*$br_R4[$br_i]/0.2)+(0.20*$br_R5[$br_i]/4)+(0.15*$br_R6[$br_i]/1.2)+(0.10*$br_R7[$br_i]/0.8)+(0.05*$br_R8[$br_i]/0.2);
+
+		$br_Self_Finance[$br_i] = $fi_Pre_Investment_Cash_LC[$br_i] + $as_Con_contribution[$br_i] + $el_bsData['D_'.$br_i] - $fi_Tot_Interest_LC[$br_i] - $fi_Tot_Repay_LC[$br_i];
+
+		//  Self-financing ratio (R9)
+		$br_ii = $br_i+1;
+		$fi_gilsum = ($fi_agData['GIL_'.$br_i] + $fi_agData['GIL_'.$br_ii])/2;
+
+		$br_Self_Financing_Ratio[$br_i] = $br_Self_Finance[$br_i]/$fi_gilsum;
+
+		$br_R9[$br_i] = $br_Self_Financing_Ratio[$br_i];
+
+		//  R9_Status(j) = PB if R9(j) >0.3
+		if($br_R9[$br_i] > 0.3){
+			$br_R9_Status[$br_i] = 'PB';
+		}else{
+			$br_R9_Status[$br_i] = 'Ok';
+		}
+
+		$br_Data['GI_'.$br_i] = $br_Global_Index[$br_i];
+		$br_Data['SFR_'.$br_i] = $br_Self_Financing_Ratio[$br_i];
+		$br_Data['R9_'.$br_i] = $br_R9[$br_i];
+		$br_Data['R9S_'.$br_i] = $br_R9_Status[$br_i];
+
+		//  Debt-to-Equity ratio (R10)
+		$br_Tot_Loans[$br_i] = $el_Net_Equity_Outstand_LC[$br_i] + $el_Cum_Retained_Earn_LC[$br_i] + $el_Net_Bonds_Outstand_LC[$br_i] + $el_Net_Loan_Outstand_LC[$br_i];
+
+		$br_Debt_to_Equity[$br_i] = ($el_Net_Bonds_Outstand_LC[$br_i] + $el_Net_Loan_Outstand_LC[$br_i])/$br_Tot_Loans[$br_i];
+
+		$br_R10[$br_i] = $br_Debt_to_Equity[$br_i];
+		//  R10_Status(j) = PB if R10(j) <0.6
+		if($br_R10[$br_i] < 0.6){
+			$br_R10_Status[$br_i] = 'PB';
+		}else{
+			$br_R10_Status[$br_i] = 'Ok';
+		}
+
+		$br_Data['DTE_'.$br_i] = $br_Debt_to_Equity[$br_i];
+		$br_Data['R10_'.$br_i] = $br_R10[$br_i];
+		$br_Data['R10S_'.$br_i] = $br_R10_Status[$br_i];
+		//  Debt Service coverage (R11)
+		$br_Debt_Service_Coverage[$br_i] = ($fi_Pre_Investment_Cash_LC[$br_i] + $fi_cdData['N_'.$br_i])/($fi_Tot_Interest_LC[$br_i] + $fi_Tot_Repay_LC[$br_i]);
+
+		$br_R11[$br_i] = $br_Debt_Service_Coverage[$br_i];
+
+		//  R11_Status(j) = PB if R11(j) <1.3
+		if($br_R11[$br_i] < 1.3){
+			$br_R11_Status[$br_i] = 'PB';
+		}else{
+			$br_R11_Status[$br_i] = 'Ok';
+		}
+
+		$br_Data['DSC_'.$br_i] = $br_Debt_Service_Coverage[$br_i];
+		$br_Data['R11_'.$br_i] = $br_R11[$br_i];
+		$br_Data['R11S_'.$br_i] = $br_R11_Status[$br_i];
+		$br_ii = $br_i-1;
+		//  ROR on Assets (R12)
+		$br_ROR[$br_i] =  ($fi_Taxable_Income_LC[$br_i] - $fi_Income_Tax_LC[$br_i] + $fi_Tot_Interest_LC[$br_i]-$fi_Short_Deposits_Int_LC[$br_i])/(($as_Net_Fixed_Assets[$br_i] + $tin_Data['WPL_'.$br_i] + $as_Net_Fixed_Assets[$br_ii] + $tin_Data['WPL_'.$br_ii])/2)*100;
+		// echo $br_i.'-'.$fi_Taxable_Income_LC[$br_i].'-'.$fi_Income_Tax_LC[$br_i].'-'.$fi_Tot_Interest_LC[$br_i].'-'.$fi_Short_Deposits_Int_LC[$br_i];
+		// echo '<br>';
+		$br_R12[$br_i] = $br_ROR[$br_i];
+
+		//  R12_Status(j) = PB if R12(j) <8.
+		if($br_R12[$br_i] < 8){
+			$br_R12_Status[$br_i] = 'PB';
+		}else{
+			$br_R12_Status[$br_i] = 'Ok';
+		}
+
+
+		$br_Data['ROR_'.$br_i] = $br_ROR[$br_i];
+		$br_Data['R12_'.$br_i] = $br_R12[$br_i];
+		$br_Data['R12S_'.$br_i] = $br_R12_Status[$br_i];
+	}
+	$br_Data['sid']=1;
+	$ctd->add($br_Data);
+
+	//  2.2.20.	Share Holders' Return module
+	$cqd = new Data($caseStudyId,$cqxml);
+	$csd = new Data($caseStudyId,$csxml);
+
+	$di_cqData = $cqd->getByField('1','sid');//  get share holder return Data
+	$di_DispYear = $di_cqData['Disposal_Year'];
+	$di_DRate = $di_cqData['D_Rate'];
+	$di_t = 1;// For using in power function
+
+$di_Total_Flow[$ahData['startYear']-1] = -$eq_Data['IE'];
+$irrarray[] = $di_Total_Flow[$ahData['startYear']-1];
+	for($di_i=$ahData['startYear'];$di_i <= $di_DispYear; $di_i++){
+		if($di_i==$di_cqData['Disposal_Year']){
+			$di_Final_Disposal[$di_DispYear] = $as_Tot_Assets_LC[$di_DispYear] - $el_Net_Bonds_Outstand_LC[$di_DispYear] - $el_Net_Loan_Outstand_LC[$di_DispYear] - $el_Cons_Dep_Decom_Fund_LC[$di_DispYear] - $el_Current_Maturity_LC[$di_DispYear];
+		}else{
+			$di_Final_Disposal[$di_i] = 0;
+		}
+
+		/*		if($di_i==$ahData['startYear']){
+
+			//  Total_Flow(First_year) = -Init_Equity_LC  -  New_Equity_LC(First_year) + Tot_Dividend_LC(First_year) + Tot_Equity_Repay_LC (j) (First_year).
+			$di_Total_Flow[$di_i] = -$eq_Data['IE'] - $fi_cdData['N_'.$di_i] + $fi_Tot_Dividend_LC[$di_i] + $eq_Data['E_'.$di_i];
+			$di_pow = pow((1+$di_DRate/100),$di_t);
+			$di_Total_Flowsum = $di_Total_Flowsum + ($di_Total_Flow[$di_i]/$di_pow);
+			$di_t++;
+
+		}else{
+		*/
+			//  Total_Flow(j) = - New_Equity_LC(j) + Tot_Dividend_LC(j) + Tot_Equity_Repay_LC (j) + Final_Disposal(j),  .
+			$di_Total_Flow[$di_i] = - $fi_cdData['N_'.$di_i] + $fi_Tot_Dividend_LC[$di_i] + $eq_Data['E_'.$di_i] + $di_Final_Disposal[$di_i];
+			$di_pow = pow((1+$di_DRate/100),$di_t);
+			$di_Total_Flowsum = $di_Total_Flowsum + ($di_Total_Flow[$di_i]/$di_pow);
+			$di_t++;
+			//	}
+
+		$irrarray[] = $di_Total_Flow[$di_i];
+		if($el_Net_Equity_Outstand_LC[$di_i-1] == 0){
+			$di_Return_OnEquity[$di_i] = 'n.a.';
+		}else{
+			$di_Return_OnEquity[$di_i] = ($fi_Tot_Dividend_LC[$di_i]/$el_Net_Equity_Outstand_LC[$di_i - 1])*100;
+		}
+
+		$di_Return_OnAssets[$di_i] = ($el_Net_Equity_Outstand_LC[$di_i]/$fi_Tot_Dividend_LC[$di_i]);
+
+		$di_Data['FD_'.$di_i] =  $di_Final_Disposal[$di_i];
+		$di_Data['TF_'.$di_i] = $di_Total_Flow[$di_i];
+		$di_Data['RE_'.$di_i] = $di_Return_OnEquity[$di_i];
+		$di_Data['RA_'.$di_i] = $di_Return_OnAssets[$di_i];
+
+	}
+$di_Data['TF_'.($ahData['startYear']-1)] = $di_Total_Flow[$ahData['startYear']-1];
+	$di_Data['TFS'] = $di_Total_Flowsum;
+//	$di_NPV_Project = $di_Total_Flow[$ahData['startYear']] + $di_Total_Flowsum;
+	$di_NPV_Project = - $eq_Data['IE'] + $di_Total_Flowsum;
+	$di_Data['NPV'] = $di_NPV_Project;
+
+
+	//  Internal_ROR= IRR( Tot_Flow(j)),A_ROR, where j varies from First_Year to the D_Year.
+
+	$di_AROR = $di_cqData['A_ROR'];
+	$IRR = $f->IRR($irrarray,$di_AROR);
+//	$IRR = $f->IRR($di_Total_Flow,$di_AROR);
+	$di_Data['IRR'] = $IRR * 100;
+
+
+	$di_Data['sid']=1;
+	$csd->add($di_Data);
+
+
+	redirectBrowser(HTTP_ROOT."report.php");
+?>

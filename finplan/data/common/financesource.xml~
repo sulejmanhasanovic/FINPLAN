@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<financesources>
+	<financesource>
+		<id>E1</id>
+		<type>E</type>
+		<value>ExportCredit1</value>
+	</financesource>
+	<financesource>
+		<id>E2</id>
+		<type>E</type>
+		<value>ExportCredit2</value>
+	</financesource>
+	<financesource>
+		<id>L1</id>
+		<type>C</type>
+		<value>Commercial Loans</value>
+	</financesource>
+</financesources>

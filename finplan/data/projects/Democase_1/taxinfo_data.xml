@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<taxinfo_data><meta><autoIncrement>9</autoIncrement></meta><data><row><id>9</id><YearlyDepreciationRate></YearlyDepreciationRate><VatSales>VSI</VatSales><VATRateInvestment>10</VATRateInvestment><VAT_Cover_Inv>80</VAT_Cover_Inv><TaxType>SR</TaxType><SteadyTaxRate>25</SteadyTaxRate><sid>1</sid></row></data></taxinfo_data>
