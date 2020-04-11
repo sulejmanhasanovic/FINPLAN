@@ -14,15 +14,17 @@
 <link rel="stylesheet" type="text/css" href="SpryAssets/SpryValidationSelect.css" >
 <!-- <link rel="stylesheet" type="text/css" href="SpryAssets/SpryValidationTextarea.css" > -->
 <script language="javascript" src="js/mkvals.js"></script>
-<SCRIPT LANGUAGE="JavaScript" SRC="js/optiontransfer.js"></SCRIPT>
+<!-- <SCRIPT LANGUAGE="JavaScript" SRC="js/optiontransfer.js"></SCRIPT> -->
 <script type="text/javascript" src="js/jquery.min.js"></script>
 <script type="text/javascript" src="js/ddaccordion.js"></script>
 <SCRIPT LANGUAGE="JavaScript">
+/*
 var opt = new OptionTransfer("AllCur","CurSel");
 opt.setAutoSort(false);
 opt.setDelimiter(",");
 opt.setStaticOptionRegex("^<!-- Val BASCUR -->$");
 opt.saveNewRightOptions("data[CurTypeSel]");
+*/
 </SCRIPT>
 
 <body>
