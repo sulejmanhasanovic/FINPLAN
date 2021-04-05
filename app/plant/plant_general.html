@@ -1,0 +1,84 @@
+
+<div id="plant_general_content">
+
+<span id="plant_general_header"></span>
+
+        
+<div class='cardbody'>
+    <input type='hidden' id='id' value='' />
+    <div class='row'>
+    <div class='col-md-6'>
+    <table class='table'><tbody>
+    <tr><td><span lang='en'>Name</span>
+    <input type="input" id='name' type='text' class='form-control' size='50' autocomplete='off' />
+    </td></tr>
+    <tr><td><span lang='en'>Plant type</span>
+        <select id="plantType" type="select" class="form-control">
+            <option value="Nuc">Nuclear</option>
+            <option value="LIn">Lignite (indigenous)</option>
+            <option value="CIn">Coal (indigenous)</option>
+            <option value="CIm">Coal (imported)</option>
+            <option value="HOIn">Heavy Oil (indigenous)</option>
+            <option value="HOIm">Heavy Oil (imported)</option>
+            <option value="LOIn">Light Oil (indigenous)</option>
+            <option value="LOIm">Light Oil (imported)</option>
+            <option value="GIn">Gas (indigenous)</option>
+            <option value="GIm">Gas (imported)</option>
+            <option value="HyO">Hydro</option>
+            <option value="PS">Pumped-Storage</option>
+            <option value="OrN">Other Renewables</option>
+            <option value="WtE">Waste-to-Energy</option>
+            <option value="OtH">Other</option></select>
+    </td></tr>
+    <tr><td><span lang='en'>Status</span>
+    <select id='Status' class='form-control'>
+    <option value='Existing'>Existing</option>
+    <option value='Committed'>Committed</option>
+    <option value='Future'>Future</option>
+    </select>
+    </td></tr>
+    <tr><td><span lang='en'>Ownership</span>
+    <select id='Ownership' class='form-control'>
+    <option value='Utility'>Utility</option>
+    <option value='IPP'>IPP</option>
+    </select>
+    </td></tr>
+    <tr><td><span lang='en'>Unit size</span>
+    <input type="input" id='unitSize' type='text' class='form-control' size='50' autocomplete='off' />
+    </td></tr>
+    </table>
+    </div>
+    <div class='col-md-6'>
+    <table class='table'><tbody>
+    <tr><td><span lang='en'>First operation year</span>
+    <input type="input" id='FOyear' type='text' class='form-control' size='50' autocomplete='off' />
+    </td></tr>
+    <tr><td><span lang='en'>Construction period</span>
+    <input type="input" id='CPeriod' type='text' class='form-control' size='50' autocomplete='off' />
+    </td></tr>
+    <tr><td><span lang='en'>Plant life in years</span>
+    <input type="input" id='Plantlife' type='text' class='form-control' size='50' autocomplete='off'/>
+    </td></tr>
+    <tr>
+        <td><span lang="en">Product</span>                    
+            <div class="pure-checkbox" style="padding-right:25px">                    
+                <input type="checkbox" class="basic" id="E" value="E">                    
+                <label for="E"> Electricity  </label>
+            </div>
+                <div class="pure-checkbox" style="padding-right:25px">                    
+                    <input type="checkbox" class="basic" id="H" value="H">                    
+                    <label for="H"> Heat  </label>                    
+                </div>
+                <div class="pure-checkbox" style="padding-right:25px">                    
+                        <input type="checkbox" class="basic" id="W" value="W">                    
+                        <label for="W"> Water  </label>                    
+                    </div>
+                <div class="pure-checkbox" style="padding-right:25px">                    
+                            <input type="checkbox" class="basic" id="C" value="C">                    
+            <label for="C"> CO2  </label>
+        </div>
+        </td>
+</tr>
+    <tbody></table></div></div>
+
+</div>

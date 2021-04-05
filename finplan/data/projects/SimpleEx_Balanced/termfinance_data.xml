@@ -1,2 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<termfinance_data><meta><autoIncrement>4</autoIncrement></meta><data><row><id>4</id><Name>E1</Name><Currency>USD</Currency><MaturityTime>12</MaturityTime><RepaymentOption>ST</RepaymentOption><InterestOption>C</InterestOption><InterestRate>5.5</InterestRate><IDCRepayment>UI</IDCRepayment><pid>1</pid><fid>USD_1_E1</fid></row></data></termfinance_data>

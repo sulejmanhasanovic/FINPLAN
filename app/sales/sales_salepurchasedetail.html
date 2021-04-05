@@ -1,0 +1,54 @@
+<br/>
+<div class="row">
+    <div class="col-md-6">
+        <input type='hidden' id='id' value='' />
+        <div lang="en">Product name and units</div>
+        <select name="Name" id="Name" class="form-control">
+        </select>
+        <br/>
+        <div lang="en">Client</div>
+        <input type='text' class='form-control' id='ClientName' />
+        <br/>
+        <div lang="en">Currency</div>
+        <select name="TradeCurrency" id="TradeCurrency" class='form-control'>
+        </select>
+        <br/>
+    </div>
+    <div class='col-md-6'>
+        <div lang="en">Quantity</div>
+        <span class='pure-radiobutton' style='padding-right:25px'> 
+            <input type='radio' name='Amount' class='basic' id='YR' value='YR' /> 
+            <label for='YR'> <span lang='en'>Yearly data</span></label> 
+            </span> 
+            <span class='pure-radiobutton' style='padding-right:25px'> 
+            <input type='radio' name='Amount' class='basic' id='FD' value='FD' /> 
+            <label for='FD'> <span lang='en'>Fixed</span></label> 
+   </span> 
+   <input type='text' class='form-control' id='AmountFixed' />
+   <br/>
+   <div lang="en">Price for first year</div>
+   <input type='text' class='form-control' id='PriceBase'/>
+    </div>
+    </div>
+
+<div class='row'>
+    <div class='col-md-12'>
+        <b><div lang="en">Price</div></b>
+        <br/>
+        <span class='pure-radiobutton' style='padding-right:25px'> 
+            <input type='radio' name='Price' class='basic' id='CP' value='CP' /> 
+        <label for='CP'> <span lang='en'>Yearly current price</span></label> 
+        </span> 
+        <span class='pure-radiobutton' style='padding-right:25px'> 
+            <input type='radio' name='Price' class='basic' id='YC' value='YC' /> 
+        <label for='YC'> <span lang='en'>Yearly Price change in addition to inflation (%)</span></label> 
+        </span> 
+        <span class='pure-radiobutton' style='padding-right:25px'> 
+            <input type='radio' name='SC' class='basic' id='SC' value='SC' /> 
+        <label for='SC'> <span lang='en'>Standard Change in Addition to Inflation (%)</span></label> 
+            <input type='text' class='form-control' id='PriceFixed' /> 
+        </span>
+    </div>
+</div>
+
+<br/>

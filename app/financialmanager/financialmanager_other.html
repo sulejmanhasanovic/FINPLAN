@@ -1,0 +1,147 @@
+<!-- <script>
+    var url = "app/financialmanager/financialmanager.js";
+    $.getScript(url);
+</script>
+<input type="hidden" id="id">
+    <div class="container-fluid"> 
+    <ul class="nav nav-tabs">
+        <li role="presentation"><a href="#/GetData/financialmanager_equity" id="equity">
+            <span lang="en">Equity</span></a>
+        </li>
+        <li role="presentation"><a href="#/GetData/financialmanager_loans" id="newloans">
+            <span lang="en">New commercial loans</span></a>
+        </li>
+        <li role="presentation"><a href="#/GetData/financialmanager_bonds" id="newbonds">
+            <span lang="en">New bonds</span></a>
+        </li>
+        <li role="presentation" class="active"><a href="#/FinancialManager/" id="other">
+            <span lang="en">Other financial data</span></a>
+        </li>
+    </ul> -->
+    <!-- <div style="padding-top:10px"></div> -->
+    <div class="row">
+        <div class="col-md-6">
+    <div class="card">
+        <div class="cardtitle backwhite">
+            <span lang="en">Other financial data</span>
+            <!-- <div class="btn-group inline pull-right">
+            <a onclick="saveData()">
+                <i class="material-icons btngreen carddivider" data-toggle="tooltip" title="Save data" lang="en" data-lang-content='false'>save</i></a>
+        </div> -->
+        </div>
+        <div class="cardbody">
+            <input type="hidden" id="cfid" />
+                    <table class="table">
+                        <tr>
+                            <td>
+                                <span lang="en">Spread for Short Term Deposits (%) Above Local Inflation</span>
+                                <input id="STDeposit" type="text" class="form-control" size="50" autocomplete="off" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span lang="en">Spread for Stand-by Facility (%) Above Local Inflation</span>
+                                <input id="SBFacility" type="text" class="form-control" size="50" autocomplete="off" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span lang="en">Short Loans Outstanding Initial (Million Malaysian Ringgit)</span>
+                                <input id="SLInitial" type="text" class="form-control" size="50" autocomplete="off" />
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="cardtitle backwhite">
+                            <span lang="en">Shareholders' return data</span>
+                            <!-- <div class="btn-group inline pull-right">
+                            <a onclick="saveData()">
+                                <i class="material-icons btngreen carddivider" data-toggle="tooltip" title="Save data" lang="en" data-lang-content='false'>save</i></a>
+                        </div> -->
+                        </div>
+                        <div class="cardbody">
+                            <input type="hidden" id="sfid" />
+                    <table class="table">
+                        <tr>
+                            <td>
+                                <span lang="en">Approx. Average Return</span>
+                                <input id="A_ROR" type="text" class="form-control" size="50" autocomplete="off" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span lang="en">Disposal Year</span>
+                                <input id="Disposal_Year" type="text" class="form-control" size="50" autocomplete="off" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span lang="en">Discount Rate</span>
+                                <input id="D_Rate" type="text" class="form-control" size="50" autocomplete="off" />
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+    <div class="card">
+        <div class="cardtitle backwhite">
+            <span lang="en">Terms of Project Finance Loan</span>
+            <!-- <div class="btn-group inline pull-right">
+            <a onclick="saveData()">
+                <i class="material-icons btngreen carddivider" data-toggle="tooltip" title="Save data" lang="en" data-lang-content='false'>save</i></a>
+        </div> -->
+        </div>
+        <div class="cardbody">
+            <input type="hidden" id="bnid" />
+
+                    <table class="table">
+                        <tr>
+                            <td>
+                                <span lang="en">Discount Rate</span>
+                                <input id="DRate" type="text" class="form-control" size="50" autocomplete="off" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span lang="en">Average Loan Term (years)</span>
+                                <input id="Loan_Term" type="text" class="form-control" size="50" autocomplete="off" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span lang="en">Security Ratio for Loan Period</span>
+                                <input id="Security_ratio1" type="text" class="form-control" size="50" autocomplete="off" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span lang="en">Expected Life of Project (years)</span>
+                                <input id="Life_Term" type="text" class="form-control" size="50" autocomplete="off" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span lang="en">Security Ratio for Project Life</span>
+                                <input id="Security_ratio2" type="text" class="form-control" size="50" autocomplete="off" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span lang="en">First Year of Cash to Debt Service</span>
+                                <input id="FY_Cash_DebtService" type="text" class="form-control" size="50" autocomplete="off" />
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
