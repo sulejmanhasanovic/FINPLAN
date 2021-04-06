@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<assetliability_data>
+	<meta>
+		<autoIncrement>4</autoIncrement>
+	</meta>
+	<data>
+		
+	<row><id>4</id><GrossFixedAssets>1</GrossFixedAssets><LessDepreciation>2</LessDepreciation><ConsumerContribution>3</ConsumerContribution><NetFxdAsst>2</NetFxdAsst><WorkProgress>4</WorkProgress><Receivables>5</Receivables><ShortTermDeposits>6</ShortTermDeposits><Equity>7</Equity><RetainedEarning>8</RetainedEarning><ConsumerDeposits>9</ConsumerDeposits><Currentmaturity>10</Currentmaturity><OptionReEvaluation>Y</OptionReEvaluation><TaxableReEvaluation>11</TaxableReEvaluation><sid>1</sid></row></data>
+</assetliability_data>

@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<investment_data><meta><autoIncrement>4</autoIncrement></meta><data><row><id>3</id><Tot_DZD>0</Tot_DZD><DZD_1/><DZD_2/><DZD_3/><DZD_4/><Tot_ALL>0</Tot_ALL><ALL_1>100</ALL_1><ALL_2/><ALL_3/><ALL_4/><Tot_MYR>480</Tot_MYR><MYR_1>30</MYR_1><MYR_2>30</MYR_2><MYR_3>20</MYR_3><MYR_4>20</MYR_4><pid>1</pid></row><row><id>4</id><Tot_DZD>1</Tot_DZD><Tot_ALL>2</Tot_ALL><Tot_MYR>3</Tot_MYR><pid>2</pid></row></data></investment_data>

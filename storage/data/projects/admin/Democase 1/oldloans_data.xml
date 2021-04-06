@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<oldloans_data>
+	<meta>
+		<autoIncrement>10</autoIncrement>
+	</meta>
+	<data>
+
+		
+	<row><id>10</id><OL_ALL>2</OL_ALL><RateType_ALL>SR</RateType_ALL><Avg_ALL>56</Avg_ALL><OL_DZD>1</OL_DZD><RateType_DZD>YR</RateType_DZD><OL_MYR>3</OL_MYR><RateType_MYR>SR</RateType_MYR><Avg_MYR>0.0</Avg_MYR><sid>1</sid><L_ALL_2012>2</L_ALL_2012><L_ALL_2013>4</L_ALL_2013><R_ALL_2012>2</R_ALL_2012><R_ALL_2013>5</R_ALL_2013><L_DZD_2012>1</L_DZD_2012><R_DZD_2012>1</R_DZD_2012><I_DZD_2012>5</I_DZD_2012><L_MYR_2012>3</L_MYR_2012><L_MYR_2013>6</L_MYR_2013><R_MYR_2012>3</R_MYR_2012><R_MYR_2013>8</R_MYR_2013></row></data>
+</oldloans_data>

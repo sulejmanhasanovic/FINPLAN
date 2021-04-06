@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<exchange_data>
+	<meta>
+		<autoIncrement>5</autoIncrement>
+	</meta>
+	<data>
+		
+	<row><id>5</id><RateTypeDZD>YR</RateTypeDZD><RateTypeALL>SR</RateTypeALL><YearlyRateALL>23</YearlyRateALL><sid>1</sid><DZD_2011>4</DZD_2011><DZD_2012>5</DZD_2012><DZD_2013>6</DZD_2013></row></data>
+</exchange_data>

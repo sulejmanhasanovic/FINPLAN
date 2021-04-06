@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<inflation_data>
+	<meta>
+		<autoIncrement>8</autoIncrement>
+	</meta>
+	<data>
+
+		
+	<row><id>8</id><RateTypeALL>YR</RateTypeALL><RateTypeDZD>YR</RateTypeDZD><RateTypeMYR>SR</RateTypeMYR><SteadyInf_MYR>5</SteadyInf_MYR><sid>1</sid><ALL_2012>5</ALL_2012><ALL_2013>6</ALL_2013><ALL_2014>7</ALL_2014><ALL_2015>8</ALL_2015><ALL_2016>4</ALL_2016><ALL_2017>3</ALL_2017><ALL_2018>2</ALL_2018><ALL_2019>1</ALL_2019><DZD_2012>1</DZD_2012><DZD_2013>22</DZD_2013><DZD_2014>3</DZD_2014><DZD_2015>4</DZD_2015><DZD_2016>5</DZD_2016><DZD_2017>6</DZD_2017><DZD_2018>7</DZD_2018><DZD_2019>8</DZD_2019><DZD_2021>6</DZD_2021></row></data>
+</inflation_data>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<oldbonds_data>
+	<meta>
+		<autoIncrement>3</autoIncrement>
+	</meta>
+	<data>
+		
+	<row><id>3</id><OB_DZD>1</OB_DZD><RateType_DZD>SR</RateType_DZD><Avg_DZD>44</Avg_DZD><OB_ALL>2</OB_ALL><RateType_ALL>SR</RateType_ALL><Avg_ALL>33</Avg_ALL><OB_MYR>3</OB_MYR><RateType_MYR>YR</RateType_MYR><sid>1</sid><B_ALL_2025>1</B_ALL_2025><R_ALL_2012>6</R_ALL_2012><I_MYR_2012>9</I_MYR_2012></row></data>
+</oldbonds_data>
