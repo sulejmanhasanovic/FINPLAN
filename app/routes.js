@@ -58,8 +58,9 @@ crossroads.addRoute('/Calculation', function() {
             $(".page-content").load('app/results/results.html');
             hideloader();
         },
-        error: function(xhr, status, error) {
-            ShowErrorMessage(error);
+        error: function(data) {
+            ShowErrorMessage("Error");
+            console.log(data);
             hideloader();
         }
     });
