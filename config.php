@@ -5,7 +5,6 @@
     define('ROOT_FOLDER', dirname(__FILE__));
     define("BASE_PATH", ROOT_FOLDER . "/");
     define("CLASS_PATH", ROOT_FOLDER . "/classes/");
-    define("MODELS_PATH", ROOT_FOLDER . "/models/");
     define("DATA_FILE_PATH", ROOT_FOLDER . "/storage/data/");
     define("COMMON_DATA_FILE_PATH", DATA_FILE_PATH . "common/");
     define("PROJECT_DATA_FILE_PATH", DATA_FILE_PATH . "projects/");

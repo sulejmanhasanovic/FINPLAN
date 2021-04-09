@@ -69,28 +69,25 @@ class Config1
         return $a;
     }
 }
-class Config2
-{
-    private function __construct()
-    {
-    }
-    public static function getData($configName, $id, $field, $path)
-    {
-        $xmldoc = new DOMDocument();
-        $xmldoc->load(USER_CASE_PATH . $path . "/" . $configName . "." . DATA_FILE_EXT);
-        $rows = $xmldoc->getElementsByTagName($configName);
-        foreach ($rows as $row)
-        {
-            $rowIds = $row->getElementsByTagName('id');
-            $rowId = $rowIds->item(0)->nodeValue;
-            if ($id == $rowId)
-            {
-                $rowVals = $row->getElementsByTagName($field);
-                $rowVal = $rowVals->item(0)->nodeValue;
-                return $rowVal;
-            }
-        }
-        return false;
-    }
+class Config2 {
+	private function __contruct(){}//so that we do not create instance of this class
+
+	public static function getData($configName, $id)
+	{
+		require_once(CLASS_PATH.'XmlParser.php');
+		$xmldoc = new DOMDocument();
+		$xmldoc->load(COMMON_DATA_FILE_PATH.$configName.".".DATA_FILE_EXT);
+		$rows = $xmldoc->getElementsByTagName($configName);
+		foreach($rows as $row){
+			$rowIds = $row->getElementsByTagName('id');
+			$rowId = $rowIds->item(0)->nodeValue;
+			if($id == $rowId){
+			  $rowVals = $row->getElementsByTagName('value');
+			  $rowVal = $rowVals->item(0)->nodeValue;
+			  return $rowVal;
+			}
+		}
+		return false;
+	}
 }
 ?>

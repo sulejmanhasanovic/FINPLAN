@@ -1,5 +1,4 @@
 <?php
-//require_once(MODELS_PATH."/XmlData.php");
 
 class CaseStudy{
 	private $caseStudyId;

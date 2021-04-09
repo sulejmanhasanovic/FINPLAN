@@ -87,7 +87,7 @@ define('FINANCIAL_BASIS_30Ep_360', 5);
 
 class Financial
 {
-	function Financial()
+	function __construct()
 	{
 		// forces the precision for calculations
 		ini_set('precision', '14');

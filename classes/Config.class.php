@@ -10,7 +10,7 @@ class Config {
 
 	public static function getData($configName)
 	{
-		require_once(MODELS_PATH.'XmlParser.php');
+		require_once(CLASS_PATH.'XmlParser.php');
 		$xml = new XmlParser();
 		$xml->LoadFile(COMMON_DATA_FILE_PATH.$configName.".".DATA_FILE_EXT);
 		$dataArr = $xml->ToArray();
@@ -28,7 +28,7 @@ class Config2 {
 
 	public static function getData($configName, $id)
 	{
-		require_once(MODELS_PATH.'XmlParser.php');
+		require_once(CLASS_PATH.'XmlParser.php');
 		$xmldoc = new DOMDocument();
 		$xmldoc->load(COMMON_DATA_FILE_PATH.$configName.".".DATA_FILE_EXT);
 		$rows = $xmldoc->getElementsByTagName($configName);

@@ -1,6 +1,6 @@
 <?php
 
-require_once(MODELS_PATH."Base.php");
+require_once(CLASS_PATH."Base.php");
 
 /*
  * @todo
