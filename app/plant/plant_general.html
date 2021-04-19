@@ -43,38 +43,38 @@
     <option value='IPP'>IPP</option>
     </select>
     </td></tr>
-    <tr><td><span lang='en'>Unit size</span>
-    <input type="input" id='unitSize' type='text' class='form-control' size='50' autocomplete='off' />
+    <tr><td><span lang='en'>Unit size (MW)</span>
+    <input type="input" id='unitSize' type='text' class='form-control' size='50' autocomplete='off' onkeyup="onlyDecimal(this)"/>
     </td></tr>
     </table>
     </div>
     <div class='col-md-6'>
     <table class='table'><tbody>
     <tr><td><span lang='en'>First operation year</span>
-    <input type="input" id='FOyear' type='text' class='form-control' size='50' autocomplete='off' />
+    <input type="input" id='FOyear' type='text' class='form-control' size='4' maxlength="4" autocomplete='off' onkeyup="onlyNumber(this)"/>
     </td></tr>
     <tr><td><span lang='en'>Construction period</span>
-    <input type="input" id='CPeriod' type='text' class='form-control' size='50' autocomplete='off' />
+    <input type="input" id='CPeriod' type='text' class='form-control' size='3' maxlength="3" autocomplete='off' onkeyup="maxValue(this, 100)" />
     </td></tr>
     <tr><td><span lang='en'>Plant life in years</span>
-    <input type="input" id='Plantlife' type='text' class='form-control' size='50' autocomplete='off'/>
+    <input type="input" id='Plantlife' type='text' class='form-control' size='50' onkeyup="onlyNumber(this)" autocomplete='off'/>
     </td></tr>
     <tr>
-        <td><span lang="en">Product</span>                    
+        <td id="tdproduct"><span lang="en">Product</span>                    
             <div class="pure-checkbox" style="padding-right:25px">                    
-                <input type="checkbox" class="basic" id="E" value="E">                    
+                <input type="checkbox" class="basic" id="E" value="E" name="product">                    
                 <label for="E"> Electricity  </label>
             </div>
                 <div class="pure-checkbox" style="padding-right:25px">                    
-                    <input type="checkbox" class="basic" id="H" value="H">                    
+                    <input type="checkbox" class="basic" id="H" value="H" name="product">                    
                     <label for="H"> Heat  </label>                    
                 </div>
                 <div class="pure-checkbox" style="padding-right:25px">                    
-                        <input type="checkbox" class="basic" id="W" value="W">                    
+                        <input type="checkbox" class="basic" id="W" value="W" name="product">                    
                         <label for="W"> Water  </label>                    
                     </div>
                 <div class="pure-checkbox" style="padding-right:25px">                    
-                            <input type="checkbox" class="basic" id="C" value="C">                    
+                <input type="checkbox" class="basic" id="C" value="C" name="product">                    
             <label for="C"> CO2  </label>
         </div>
         </td>

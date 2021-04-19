@@ -3,7 +3,6 @@ $(document).ready(function () {
     getData();
 
     $('.add').click(function() {
-        console.log('test');
         $(this).addClass("readonly1").siblings().removeClass("readonly1");
     })
 });
@@ -13,7 +12,7 @@ function getData(){
         url: url,
         type: 'POST',
         data:{
-            action: "select"
+            action: "get"
       },
         success: function (results) {
             $("#plants tbody").html("");
@@ -26,7 +25,7 @@ function getData(){
     
             for(var i=0; i<plants.length;i++){
             $("#plants tbody").append("<tr class='add'>\
-                <td><a class='pointer' id='plantgeneral_"+i+"' onclick='getDataPlant(\"plant_general\",\""+curr[0]+"\","+plants[i].id+","+i+")'><i class='material-icons btnblue' data-lang-content='false' data-toggle='tooltip' lang='en' data-placement='top' title='' data-original-title='Edit plant'>edit</i></a></td>\
+                <td><a class='pointer' id='plantgeneral_"+plants[i].id+"' onclick='getDataPlant(\"plant_general\",\""+curr[0]+"\","+plants[i].id+","+i+")'><i class='material-icons btnblue' data-lang-content='false' data-toggle='tooltip' lang='en' data-placement='top' title='' data-original-title='Edit plant'>edit</i></a></td>\
                 <td>"+plants[i].name+"</td>\
                 <td>"+plants[i].plantType+"</td>\
                 <td>"+plants[i].Status+"</td>\
@@ -62,13 +61,20 @@ function getDataPlant(obj, curr, plantid, i){
         Cookies("id", obj);
 
     $("#planttabs").show();
-    if(plantid!==undefined)
+    console.log(plantid);
+    if(plantid!==undefined){
         Cookies("plantid", plantid);
+            var thisClosest = $("#plantgeneral_" + plantid).closest('tr');
+            thisClosest.addClass("readonly1").siblings().removeClass("readonly1");
+    }
+        
         
     if(curr!==undefined)
         Cookies("curr", curr);
     $('#'+obj).parent().addClass('active');
     $("#plantcontent").load('app/data/data.html');
+
+
 }
 
 function deletePlant(id){
@@ -101,10 +107,24 @@ function deletePlant(id){
 }
 
 function savePlant(){
+    if(!(required("name", "Name is required!") &&
+    required("unitSize","Unit size is required!") &&
+    required("FOyear", "First operation year is required!") &&
+    required("CPeriod", "Construction period is required!") &&
+    required("Plantlife", "Construction period is required!")))
+    return false;
+
+    var product=$('input[name=product]:checked');
+
+    if(product.length==0){
+        $('#tdproduct').parent().addClass('has-error');
+        ShowErrorMessage("Product is required!");
+        return false;
+    }
+
     var object = {};
     var inputs = $("#plant_general_content").find("input, select");
     var curtypesel="";
-    console.log(inputs);
    for(var a=0; a<inputs.length; a++){
        if(inputs[a]["type"]=="radio" && inputs[a]["checked"]==true)
        object[inputs[a]["name"]]=inputs[a]["value"];
@@ -124,8 +144,6 @@ function savePlant(){
 
    if(curtypesel!="")
         object["CurTypeSel"]=curtypesel.slice(0,-1);
-
-        console.log(object);
 
     $.ajax({
         url: url,

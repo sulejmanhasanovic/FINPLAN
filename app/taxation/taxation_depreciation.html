@@ -4,7 +4,7 @@
                                         <div lang="en">Declining Balance Depreciation Rate for Assets of <span id="yearTax"></span> (%)</div>
                                 </div>
                                 <div class="col-md-6">
-                                    <input id="YearlyDepreciationRate" type="text" class="form-control" size="3" maxlength="3" autocomplete="off" />
+                                    <input id="YearlyDepreciationRate" type="text" class="form-control" size="3" maxlength="3" autocomplete="off" onkeyup="maxValue(this, 100)"/>
 
                                 </div>
                             </div>
@@ -14,7 +14,7 @@
                                 <div class="col-md-3">
                                        
                                        <div class="pure-checkbox">
-                                        <input type="checkbox" class="basic" id="VatSales" size="3" maxlength="3" value='VSI' onclick="disable(this.id)" />
+                                        <input type="checkbox" class="basic" id="VatSales" value='VSI' onclick="disable(this.id)" />
                                         <label for="VatSales"> VAT on Investment  </label>
                                     </div>
                                 </div>
@@ -25,7 +25,7 @@
                                                 <span lang="en">VAT Rate for Investment (%)</span>
                                             </div>
                                             <div class="col-md-4">
-                                                <input id="VATRateInvestment" type="text" class="form-control" maxlength="3" size="3" autocomplete="off" />
+                                                <input id="VATRateInvestment" type="text" class="form-control" maxlength="3" size="3" autocomplete="off" onkeyup="maxValue(this, 100)" />
                                             </div>
                                         </div>
                                     </div>   
@@ -36,7 +36,7 @@
                                                 <span lang="en">% of Investment</span>
                                             </div>
                                             <div class="col-md-6">
-                                                <input id="VAT_Cover_Inv" type="text" class="form-control" size="50" autocomplete="off" />
+                                                <input id="VAT_Cover_Inv" type="text" class="form-control" size="3" maxlength="3" autocomplete="off" onkeyup="maxValue(this, 100)" />
                                             </div>
                                         </div>
                                     </div>        
@@ -58,7 +58,7 @@
                                                 <span lang="en">Loss in Start Year (Million)</span>
                                             </div>
                                             <div class="col-md-4">
-                                                <input id="LossBaseYear" type="text" class="form-control" autocomplete="off" />
+                                                <input id="LossBaseYear" type="text" class="form-control" autocomplete="off" size="3" maxlength="3" onkeyup="maxValue(this, 100)" />
                                             </div>
                                         </div>
                                       
@@ -77,7 +77,7 @@
                                                     <input type="radio" id="SR" name="TaxType" value="SR" onclick="disable(this.id)"  />
                                                     <label for="SR">Steady Rate (%)</label>
                                                </span>
-                                               <input id="SteadyTaxRate" type="text" class="form-control" size="50" autocomplete="off" />                                            </div>
+                                               <input id="SteadyTaxRate" type="text" class="form-control" size="3" maxlength="3" autocomplete="off" onkeyup="maxValue(this, 100)" />                                            </div>
                                         </div>
                                     </div>
                                 </div>

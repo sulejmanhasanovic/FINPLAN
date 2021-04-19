@@ -32,12 +32,12 @@ class Config {
 		$xml = new XmlParser();
 		$xml->LoadFile(COMMON_DATA_FILE_PATH.$configName.".".DATA_FILE_EXT);
 		$dataArr = $xml->ToArray();
-		if (is_array($dataArr)){
-		  $key = each($dataArr);
-		  $key = $key['key'];
-		  return $dataArr[$key];
-		}
-		return $dataArr;
+		// if (is_array($dataArr)){
+		//   $key = each($dataArr);
+		//   $key = $key['key'];
+		//   return $dataArr[$key];
+		// }
+		return $dataArr[$configName];
 	}
 }
 

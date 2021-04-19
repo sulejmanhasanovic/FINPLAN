@@ -1,97 +1,66 @@
-<!-- <script>
-    var url = "app/general/geninf.js";
-    $.getScript(url);
-</script> -->
 <input type="hidden" id="id">
-   <!-- <div class="container-fluid"> -->
-    <!-- <ul class="nav nav-tabs">
-        <li role="presentation" class="active"><a href="#/GeneralInformation" id="general_information">
-            <span lang="en">General information</span></a>
-        </li>
-        <li role="presentation"><a href="#/GetData/general_inflation" id="general_inflation">
-            <span lang="en">Inflation Information</span></a>
-        </li>
-        <li role="presentation"><a href="#/GetData/general_exchangerate" id="general_exchangerate">
-            <span lang="en">Currency exchage rates</span></a>
-        </li>
-    </ul>
-<div style="padding-top:10px"></div> -->
-                    <!-- <div class="card">
-                        <div class="cardtitle backwhite">
-                            <span lang="en">Definitions (name, years, description)</span>
-                            <div class="btn-group inline pull-right">
-                            <a onclick="saveData()">
-                                <i class="material-icons btngreen carddivider" data-toggle="tooltip" title="Save data" lang="en" data-lang-content='false'>save</i></a>
-                        </div>
-                        </div>
-                        <div class="cardbody"> -->
-                            <div class="row">
-                                <div class="col-md-6">
-                            <table class="table">
-                                <tr>
-                                    <td id="fgstudyname">
-                                        <span lang="en">Name of the case study</span>
-                                        <input id="studyName" type="text" class="form-control" size="50" autocomplete="off" />
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <span lang="en">Start year</span>
-                                        <input id="startYear" type="text" class="form-control" size="50" autocomplete="off"
-                                        onkeyup="validYears(this)"
-                                            placeholder="Start year" />
-                                    </td>
-                                </tr>
-                                    <tr>
-                                    <td>
-                                        <span lang="en">End year</span>
-                                        <input id="endYear" type="text" class="form-control" size="50" autocomplete="off"
-                                        onkeyup="validYears(this)"
-                                            placeholder="End year" />
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <span lang="en">Study type</span>
-                                        <select id="studyType" class="form-control">
-                                            <option value="Single Plant" selected="selected">Single Plant</option>
-                                            <option value="Utility">Utility</option>
-                                            <option value="Power System">Power System</option>
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <span lang="en">Case description</span>
-                                        <textarea class="form-control" name="Desc" id="Desc" cols="45" autocomplete="off"
-                                            rows="4"></textarea>
-                                    </td>
-                                </tr>
+<div class="row">
+    <div class="col-md-6">
+        <table class="table">
+            <tr>
+                <td id="fgstudyname">
+                    <span lang="en">Name of the case study</span>
+                    <input id="studyName" type="text" class="form-control" autocomplete="off" />
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span lang="en">Start year</span>
+                    <input id="startYear" type="text" class="form-control" maxlength="4" size="4" autocomplete="off"
+                    onkeyup="onlyNumber(this)" placeholder="Start year" />
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span lang="en">End year</span>
+                    <input id="endYear" type="text" class="form-control" maxlength="4" size="4" autocomplete="off"
+                    onkeyup="onlyNumber(this)" placeholder="End year" />
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span lang="en">Study type</span>
+                    <select id="studyType" class="form-control">
+                        <option value="Single Plant" selected="selected">Single Plant</option>
+                        <option value="Utility">Utility</option>
+                        <option value="Power System">Power System</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span lang="en">Case description</span>
+                    <textarea class="form-control" name="Desc" id="Desc" cols="45" autocomplete="off"
+                        rows="4"></textarea>
+                </td>
+            </tr>
 
-                            </table>
-                        </div>
-                        
+        </table>
+    </div>
+
+    <div class="col-md-6">
+        <span lang="en">Local Currency</span>
+        <select name="Currency" id="Currency" title="Select Currency" class="form-control"></select>
+        <br />
+        <div id='jqxWidget'>
+            <span lang="en">Foreign Currencies (Drag & Drop)</span><br />
+            <div class="row">
                 <div class="col-md-6">
-                    <span lang="en">Local Currency</span>
-                    <select name="Currency" id="Currency"  title="Select Currency" class="form-control"></select>
-                    <br/>
-                <div id='jqxWidget'>
-                    <span lang="en">Foreign Currencies (Drag & Drop)</span><br/>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div id="listBoxA">
-                            </div>
-                        </div>
-                        <div class="col-md-6 text-right">
-                            <div id="listBoxB">
-                            </div>
-                        </div>
+                    <div id="listBoxA">
                     </div>
-                            
-                           
-                        </div>
                 </div>
+                <div class="col-md-6 text-right">
+                    <div id="listBoxB">
                     </div>
+                </div>
+            </div>
 
-                <!-- </div>
-            </div> -->
+
+        </div>
+    </div>
+</div>

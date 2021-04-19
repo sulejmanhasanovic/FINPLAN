@@ -2,13 +2,18 @@ var url="app/plant/plant.php";
 function showData(results) {
     $("#additionalData").load("app/plant/plant_general.html", function(){
     showloader();
+    $("#chartGrid").hide();
+    $("#decDown").hide();
+    $("#decUp").hide();
+    $("#exportgrid").hide();
+    
     Cookies("id", 'plant_general');
     var id=Cookies.get("plantid");
 
         $.ajax({
             url: url,
             data: {
-                action: 'selectplant',
+                action: 'getplant',
                 id: id
             },
             type: 'POST',
@@ -25,6 +30,10 @@ function showData(results) {
                 $("#id").val(plant.id);
 
                 $("#savePlant").show();
+
+                $("#savedata").attr("onclick","savePlant()");
+
+
                 hideloader();
             },
             error: function (xhr, status, error) {

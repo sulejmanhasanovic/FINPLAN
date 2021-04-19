@@ -30,12 +30,14 @@ $xml = new XmlData($caseStudyId,$xmlfile);
 			echo (json_encode($results));
 		break;
 
-		case 'edit':
+		case 'update':
 				if($_POST['data']['id']==0){
 					unset($_POST['data']['id']);
 					$xml->add($_POST['data']);
 				}else{
-					$xml->update($_POST['data']);
+					$xml->deleteById($_POST['data']['id']);	
+					unset($_POST['data']['id']);
+					$xml->add($_POST['data']);
 				}
 			break;
 

@@ -29,7 +29,7 @@ function showData(results) {
         var tblcontrols="<tr>";
         tblcontrols+="<td class='box-shadow card backwhite'><b>"+currencyName+" (Million)</b><br/> \
         <span>Maximum dividend (%)</span> \
-        <input id='DR_"+baseCurrency+"' type='text' class='form-control' size='50' autocomplete='off' value='"+ctdata['DR_'+baseCurrency]+"'/> \
+        <input id='DR_"+baseCurrency+"' type='text' class='form-control' size='50' autocomplete='off' onkeyup='onlyDecimal(this)' value='"+ctdata['DR_'+baseCurrency]+"'/> \
         <br/>\
         <span>Initial equity</span> \
         <input id='IE_"+baseCurrency+"' type='text' class='form-control' size='50' autocomplete='off' value='"+aadata['Equity']+"' readonly/> \

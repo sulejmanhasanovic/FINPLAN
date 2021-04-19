@@ -598,7 +598,6 @@ pre{
 .error{
     background-color: #ffcdd2 !important;
 }
-
 .notexisticons{
     display:none;
 }
@@ -1015,4 +1014,8 @@ pre{
   background-color: #f7f7f7;
   font-weight:bold;
   color:#333333 !important;
+}
+
+.error-text{
+  color: #ff4500 !important;
 }

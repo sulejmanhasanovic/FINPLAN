@@ -318,23 +318,34 @@ switch ($id)
                     $results['producttypes']=$productTypes;
                 break;
 
-                case 'plant_depdec':
+                case 'plant_depreciation':
                     $productTypes = Config::getData('producttype');
                     $apd = new XmlData($caseStudyId,$apxml);
-                    //depreciation
-                    $dep = new XmlData($caseStudyId,$alxml);
-                    //decommissioning
-                    $dec = new XmlData($caseStudyId,$akxml);
+                    $xml = new XmlData($caseStudyId,$alxml);
+                    $plantid=$_COOKIE['plantid'];
+                    if ($action == 'get')
+                    {
+                        $ceData = $apd->getById($plantid);
+                        $cfData = $xml->getByField($plantid,'pid');
+                        $results['ceData']=$ceData;
+                        $results['cfData']=$cfData;
+                        $results['id']=$plantid;
+                    }
+                    $results['producttypes']=$productTypes;
+                break;
+
+                case 'plant_decommissioning':
+                    $productTypes = Config::getData('producttype');
+                    $apd = new XmlData($caseStudyId,$apxml);
+                    $xml = new XmlData($caseStudyId,$akxml);
 
                     $plantid=$_COOKIE['plantid'];
                     if ($action == 'get')
                     {
                         $ceData = $apd->getById($plantid);
-                        $cfDataDep = $dep->getByField($plantid,'pid');
-                        $cfDataDec = $dec->getByField($plantid,'pid');
+                        $cfData = $xml->getByField($plantid,'pid');
                         $results['ceData']=$ceData;
-                        $results['cfDataDep']=$cfDataDep;
-                        $results['cfDataDec']=$cfDataDec;
+                        $results['cfData']=$cfData;
                         $results['id']=$plantid;
                     }
                     $results['producttypes']=$productTypes;
@@ -349,14 +360,14 @@ switch ($id)
                     $financeSources = Config::getData('financesource');
                     $apd = new XmlData($caseStudyId,$apxml);
                     $and = new XmlData($caseStudyId,$anxml);
-                    $asd = new XmlData($caseStudyId,$asxml);
+                    $xml = new XmlData($caseStudyId,$asxml);
                     $add = new XmlData($caseStudyId,$adxml);
 
                     if ($action == 'get')
                     {
                         $ceData = $apd->getById($plantid);
                       //  $ciData = $and->getById($_REQUEST['id']);
-                        $cfData = $asd->getByField($fid,'fid');
+                        $cfData = $xml->getByField($fid,'fid');
                         $results['financesources']=$financeSources;
                         $results['ceData']=$ceData;
                       //  $results['ciData']=$ciData;
@@ -392,27 +403,60 @@ if ($action == 'edit')
 				setcookie("titlecs", USER_CASE_PATH . $_POST["studyName"], time() + (86400 * 30) , "/");
 			}
     }
-    if($id=="financialmanager_other"){
-        $bod->deleteById($_POST['other']['id']);
-        unset($_POST['other']['id']);
-        $bod->add($_POST['other']);	
 
-        $cqd->deleteById($_POST['shareholders']['id']);
-        unset($_POST['shareholders']['id']);
-        $cqd->add($_POST['shareholders']);
+    switch ($id){
+        case 'financialmanager_other':
+            $bod->deleteById($_POST['other']['id']);
+            unset($_POST['other']['id']);
+            $bod->add($_POST['other']);	
 
-        $bnd->deleteById($_POST['terms']['id']);
-        unset($_POST['terms']['id']);
-        $bnd->add($_POST['terms']);	
-    }else{
-        $xml->deleteByField(1, 'sid');
-        $xml->add(json_decode($_POST['data'], true));
-    
-        $dataNotes[$id]=$_POST['datanotes'];
-        $json_data = json_encode($dataNotes);
-        file_put_contents(USER_CASE_PATH.$caseStudyId."/datanotes.json", $json_data);
+            $cqd->deleteById($_POST['shareholders']['id']);
+            unset($_POST['shareholders']['id']);
+            $cqd->add($_POST['shareholders']);
+
+            $bnd->deleteById($_POST['terms']['id']);
+            unset($_POST['terms']['id']);
+            $bnd->add($_POST['terms']);	
+        break;
+
+        case 'plant_production':
+        case 'plant_omcosts':
+        case 'plant_fuelcosts':
+        case 'plant_generalexpenses':
+        case 'plant_investments':
+        case 'plant_depreciation':
+        case 'plant_decommissioning':
+            $data=json_decode($_POST['data'], true);
+            $pid=$_COOKIE['plantid'];
+            $iddata=$_COOKIE['iddata'];
+            $data['pid']=$pid;
+            unset($data['sid']);
+            $xml->deleteById($iddata);
+			$xml->add($data);
+        break;   
+
+        case 'plant_sources':
+            $data=json_decode($_POST['data'], true);
+            $plantid=$_COOKIE['plantid'];
+            $curr=$_COOKIE['curr'];
+            $fid=$curr.'_'.$plantid;
+            $data['fid']=$fid;
+            $data['cid']=$curr;
+            unset($data['sid']);
+            unset($data['curr']);
+            $xml->deleteById($iddata);
+			$xml->add($data);
+        break;
+
+        default:
+            $xml->deleteByField(1, 'sid');
+            $xml->add(json_decode($_POST['data'], true));
+            
+            $dataNotes[$id]=$_POST['datanotes'];
+            $json_data = json_encode($dataNotes);
+            file_put_contents(USER_CASE_PATH.$caseStudyId."/datanotes.json", $json_data);
+        break;
     }
-
 }
 else
 {

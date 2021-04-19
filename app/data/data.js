@@ -6,7 +6,6 @@ var decimal='d'+d.toString();
     $(document).ready(function () {
         showloader();
         var id = Cookies('id');
-        console.log(id);
         var folder=getGroup(id);
         $.getScript('app/'+folder+'/' + id + '.js', function () { 
             $.ajax({
@@ -94,25 +93,31 @@ var decimal='d'+d.toString();
             object['sid'] = '1';
 
         //D
-        if (id == "general_inflation" 
-        || id=="general_exchangerate" 
-        || id=="taxation_royalty" 
-        || id=="balancesheet_investment"  
-        || id=="taxation_depreciation" 
-        || id=="balancesheet_oldloans" 
-        || id=="balancesheet_oldbonds" 
-        || id=="sales_consumers" 
-        || id=="financialmanager_equity" 
-        || id=="financialmanager_loans" 
-        || id=="financialmanager_bonds"
+        if (rows!==undefined && rows.length>0
+        //id == "general_inflation" 
+        //|| id=="general_exchangerate" 
+        //|| id=="taxation_depreciation" 
+        //|| id=="taxation_royalty" 
+        //|| id=="balancesheet_investment"  
+        //|| id=="balancesheet_oldloans" 
+        //|| id=="balancesheet_oldbonds" 
+        //|| id=="sales_consumers" 
+        //|| id=="financialmanager_equity" 
+        //|| id=="financialmanager_loans" 
+        //|| id=="financialmanager_bonds"
+        //|| id=="plant_production"
         ) {
             cols=cols.records;
             for (var i = 1; i < cols.length; i++) {
                 for (var j = 0; j < rows.length; j++) {
-
-                    if(rows[j][cols[i]['datafield']] && cols[i]["editable"]==true)
-                    object[cols[i]['datafield'] + '_' + rows[j]['item']] = rows[j][cols[i]['datafield']];
-                
+                    if(rows[j][cols[i]['datafield']] && cols[i]["editable"]==true){
+                        if(id=='plant_investments' || id=='plant_sources'){
+                            var item=rows[j]['item'].split(":");
+                            object[cols[i]['datafield'] + '_' + item[0]] = rows[j][cols[i]['datafield']];
+                        }else{
+                            object[cols[i]['datafield'] + '_' + rows[j]['item']] = rows[j][cols[i]['datafield']];
+                        }
+                    }
                 }
             }
         }

@@ -12,7 +12,7 @@ $results['planttypes']=$plantTypes;
 $results['producttypes']=$productTypes;
 
 	switch($_POST['action']){	
-		case 'select':
+		case 'get':
 			$cg = 'geninf_data';
 			$dc = new XmlCollection($caseStudyId,$cg);
 			$caseData = $dc->getoneById();
@@ -23,7 +23,7 @@ $results['producttypes']=$productTypes;
 			echo (json_encode($results));
 		break;
 
-		case 'selectplant':
+		case 'getplant':
 			$data = $apd->getById($_POST['id']);
 			$results['data']=$data;
 			echo (json_encode($results));

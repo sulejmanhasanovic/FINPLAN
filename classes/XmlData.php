@@ -133,7 +133,7 @@ class XmlData extends Base {
 				$n = $ns->item(0);
 				$a = $this->dom->createElement($key);
 				$a->appendChild($this->dom->createTextNode($value));
-				if($n!=null)
+			//	if($n!=null)
 				$n->parentNode->replaceChild($a, $n)  ;
 			}
 		}
