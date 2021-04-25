@@ -15,7 +15,6 @@ function getCaseStudies() {
 }
 
 function showCaseStudies(cs) {
-    console.log(cs);
     $("#accordionstudy").html('');
     var html = [];
     html.push('<div class="box-shadow card ">');

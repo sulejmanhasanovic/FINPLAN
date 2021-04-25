@@ -61,20 +61,17 @@ function getDataPlant(obj, curr, plantid, i){
         Cookies("id", obj);
 
     $("#planttabs").show();
-    console.log(plantid);
+
     if(plantid!==undefined){
         Cookies("plantid", plantid);
             var thisClosest = $("#plantgeneral_" + plantid).closest('tr');
             thisClosest.addClass("readonly1").siblings().removeClass("readonly1");
     }
         
-        
     if(curr!==undefined)
         Cookies("curr", curr);
     $('#'+obj).parent().addClass('active');
     $("#plantcontent").load('app/data/data.html');
-
-
 }
 
 function deletePlant(id){
@@ -156,12 +153,4 @@ function savePlant(){
             getData();
         }
     })
-}
-
-function check(value){
-    if (value==undefined){
-        return ""
-    }else{
-        return value;
-    }
 }

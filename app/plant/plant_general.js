@@ -21,6 +21,11 @@ function showData(results) {
                 var res = JSON.parse(results);
                 var plant=res['data'];
                 setValues(plant);
+
+                $("#plantType option").filter(function() {
+                    return $(this).text() == plant['plantType'];
+                }).prop('selected', true);
+
                 var currtypesel=plant['CurTypeSel'].split(',');
                 for(var i=0; i<currtypesel.length; i++){
                     $("#"+currtypesel[i]).prop('checked', true);

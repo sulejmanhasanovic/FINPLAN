@@ -30,7 +30,7 @@ class PlantInvestment extends FinplanService {
 
       foreach ($inv_cpData as $inv_row) {
   			$inv_idData = $this->finplan->and->getByField($inv_row['id'],'pid'); // get investment Data for each plant
-  			$inv_Data = ''; //clear Data if any
+  			$inv_Data = Array(); //clear Data if any
   			$inv_pid = $inv_row['id'];
   			$inv_Data['pid'] = $inv_pid; // set pid equal to id of this plant id
   			$inv_Data['PW_'.$inv_pid] = 0;
@@ -81,7 +81,7 @@ class PlantInvestment extends FinplanService {
 
   	foreach($vat_cpData as $vat_row) {
   		$vat_aeData = $this->finplan->aed->getByField($vat_row['id'],'pid');// get investment Data for each plant
-  		$vat_Data = '';//clear Data if any
+  		$vat_Data = Array();//clear Data if any
   		$vat_pid = $vat_row['id'];
   		$vat_fYear = $vat_row['FOyear']; // 1st oper year
   		$vat_cYear = $vat_row['FOyear']-$vat_row['CPeriod'];
@@ -221,7 +221,7 @@ class PlantInvestment extends FinplanService {
      $dd_suData = $this->finplan->asd->getall();// get Data for finance sources
      if(is_array($dd_suData) && count($dd_suData) > 0) {// check if Data exist for this sources
        foreach($dd_suData as $dd_row) {
-         $dd_Data = '';//clear Data if any
+         $dd_Data = Array();//clear Data if any
          $dd_fid = $dd_row['fid'];// get fid for the Data
          $dd_fidChunks = explode("_", $dd_fid);// split the fid
          $dd_Data['fid'] = $dd_fid;// set fid for storing Data

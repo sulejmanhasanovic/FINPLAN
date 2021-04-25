@@ -25,7 +25,7 @@ class BalanceLoan extends FinplanService {
   	if (is_array($bal_cpData) && count($bal_cpData) > 0) {//Check if plant Data exists
       foreach($bal_cpData as $bal_row) {//froeach plant
         
-        $bal_Data = ''; //intialise the Data set
+        $bal_Data = Array(); //intialise the Data set
   			$bal_pid = $bal_row['id'];// pass plant id value    [1]
   			$bal_Data['pid'] = $bal_pid;//assign pass plant id value to pid
 
@@ -302,7 +302,7 @@ class BalanceLoan extends FinplanService {
 
     if (is_array($col_cpData) && count($col_cpData) > 0) { //Check if plant Data exists
       foreach($col_cpData as $col_row) {
-        $col_Data = ''; //intialise the Data set
+        $col_Data = Array(); //intialise the Data set
         $col_pid = $col_row['id'];// pass plant id value
         $col_Data['pid'] = $col_pid;//assign pass plant id value to pid
         for($col_c = 0; $col_c < count($this->finplan->allChunks); $col_c++) { // for each currency

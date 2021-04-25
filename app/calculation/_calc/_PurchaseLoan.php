@@ -94,7 +94,7 @@ class PurchaseLoan extends FinplanService {
 
   	if (is_array($sl_azData) && count($sl_azData) > 0) {
       foreach($sl_azData as $sl_row) {
-        $sl_Data = '';//intialise the Data set
+        $sl_Data = Array();//intialise the Data set
   			$sl_Data['fid'] = $sl_row['id'];
   			$sl_Data['Name'] = $sl_row['Name'];
   			$sl_Data['ClientName'] = $sl_row['ClientName'];
@@ -201,7 +201,7 @@ class PurchaseLoan extends FinplanService {
   	if(is_array($pr_arData) && count($pr_arData) > 0){
 
   		foreach($pr_arData as $pr_row){
-  			$pr_Data = '';//intialise the Data set
+  			$pr_Data = Array();//intialise the Data set
   			$pr_Data['fid'] = $pr_row['id'];
   			$pr_Data['Name'] = $pr_row['Name'];
   			$pr_Data['ClientName'] = $pr_row['ClientName'];

@@ -24,7 +24,7 @@ class CostRevenue extends FinplanService {
         $endyr = $this->finplan->endYear < $plntyr ? $this->finplan->endYear : $plntyr;
         //echo "startyr = ".$startyr.", end year = ".$endyr."<br>";
         $om_idData = $this->finplan->aod->getByField($om_row['id'],'pid');// get OM cost by plant id
-        $om_Data = '';//intialise & clear the Data set
+        $om_Data = Array();//intialise & clear the Data set
         $om_Data['pid'] = $om_row['id'];// set pid = plant id
         for($om_c = 0; $om_c < count($this->finplan->allChunks); $om_c++){// for each currency
           $om_CX = $this->finplan->allChunks[$om_c];
@@ -62,7 +62,7 @@ class CostRevenue extends FinplanService {
           $endyr = $this->finplan->endYear < $plntyr ? $this->finplan->endYear : $plntyr;
 
     			$fc_imData = $this->finplan->amd->getByField($fc_row['id'],'pid');// get fuel Data by plant id
-    			$fc_Data = '';//intialize & clear Data set
+    			$fc_Data = Array();//intialize & clear Data set
     			$fc_Data['pid'] = $fc_row['id'];//set pid = plant id
     			for($fc_c = 0; $fc_c < count($this->finplan->allChunks); $fc_c++){// for each currency
     				$fc_CX = $this->finplan->allChunks[$fc_c];
@@ -137,7 +137,7 @@ class CostRevenue extends FinplanService {
         $endyr = $this->finplan->endYear < $plntyr ? $this->finplan->endYear : $plntyr;
 
         $ge_idData = $this->finplan->bud->getByField($ge_row['id'],'pid');// get generalexpense by plant id
-        $ge_Data = '';//intialise & clear the Data set
+        $ge_Data = Array();//intialise & clear the Data set
         $ge_Data['pid'] = $ge_row['id'];// set pid = plant id
 
         for($ge_c = 0; $ge_c < count($this->finplan->allChunks); $ge_c++) {// for each currency
@@ -249,7 +249,7 @@ class CostRevenue extends FinplanService {
   	if (is_array($gi_cpData) && count($gi_cpData) > 0) {// check if plant Data exist
       foreach ($gi_cpData as $gi_row) {// for each plant
         $gi_invData = $this->finplan->aed->getByField($gi_row['id'],'pid');//get investment Data by plant id
-  			$gi_Data = '';// intialize & clear Data if any
+  			$gi_Data = Array();// intialize & clear Data if any
   			$gi_Data['pid'] = $gi_row['id'];// set pid equal to plant id
   			$gi_GFA[$this->finplan->startYear-1]=0;// setting GFA for startyear-1 = zero
   			$gi_TGI = 0;//setting initial Tot Global Investment to zero
@@ -292,7 +292,7 @@ class CostRevenue extends FinplanService {
   	    foreach($dp_cpData as $dp_row) {
   			$dp_invData = $this->finplan->aed->getByField($dp_row['id'],'pid');//get global investment by plant id
   			$dp_deprData = $this->finplan->ald->getByField($dp_row['id'],'pid');//get depreciation Data by plant id
-  			$dp_Data = '';
+  			$dp_Data = Array();
   			$dp_Data['pid'] = $dp_row['id'];
   			$dp_GFA[$this->finplan->startYear-1]=0;// setting GFA for startyear-1 = zero
   			$dp_pworth = $dp_invData['PW_'.$dp_row['id']];
@@ -364,7 +364,7 @@ class CostRevenue extends FinplanService {
     $de_Data = Array();//initialise
 
   	if (is_array($de_cpData) && count($de_cpData) > 0) {// check if plant exist
-      $de_Data = '';//intialise & clear the Data set
+      $de_Data = Array();//intialise & clear the Data set
       $de_Data['sid'] = 1;// set pid = plant id
       foreach ($de_cpData as $de_row) {
         $de_idData = $this->finplan->akd->getByField($de_row['id'],'pid');// get generalexpense by plant id

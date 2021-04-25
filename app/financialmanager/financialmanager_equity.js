@@ -32,7 +32,7 @@ function showData(results) {
         <input id='DR_"+baseCurrency+"' type='text' class='form-control' size='50' autocomplete='off' onkeyup='onlyDecimal(this)' value='"+ctdata['DR_'+baseCurrency]+"'/> \
         <br/>\
         <span>Initial equity</span> \
-        <input id='IE_"+baseCurrency+"' type='text' class='form-control' size='50' autocomplete='off' value='"+aadata['Equity']+"' readonly/> \
+        <input id='IE_"+baseCurrency+"' type='text' class='form-control' size='50' autocomplete='off' value='"+check(aadata['Equity'])+"' readonly/> \
         </td> \
         </tr> \
         </table>";

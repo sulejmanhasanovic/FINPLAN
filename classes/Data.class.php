@@ -163,6 +163,7 @@ class Data {
 	}
 
 	public function saveXML(){
+		$this->dom->formatOutput = true;
 		$this->dom->save($this->xmlFile);
 	}
 }

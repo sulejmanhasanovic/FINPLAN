@@ -23,11 +23,25 @@
 		{
 	  
 		  $this->caseStudyId = $caseStudyId;
+		  $files = glob(USER_CASE_PATH.$this->caseStudyId.'/result/cal_*.xml'); // get all file names
+		  foreach($files as $file){ // iterate files
+				if(is_file($file)) {
+				  unlink($file); // delete file
+				}
+		  }
+		  
 		  $this->finplan = new Finplan($this->caseStudyId);
 	  
 		  foreach (glob(BASE_PATH."/app/calculation/_calc/*") as $filename) {
 			require_once($filename);
 		  }
+
+		  $files = glob(USER_CASE_PATH.$this->caseStudyId.'/result/cal_*.xml'); // get all file names
+			foreach($files as $file){ // iterate files
+  				if(is_file($file)) {
+  				  unlink($file); // delete file
+  				}
+			}
 	  
 		}
 	  

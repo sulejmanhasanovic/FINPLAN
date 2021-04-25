@@ -42,15 +42,15 @@ function showData(results) {
                 var cellclassname = "";
                 if (cedata["RateType" + curTypeSel[j]] == "SR") {
                     checkedSR = "checked";
-                    editable = false;
-                    cellclassname = "readonly";
+                   // editable = false;
+                  //  cellclassname = "readonly";
                 }
 
                 var checkedII = "";
                 if (cedata["RateType" + curTypeSel[j]] == "II") {
                     checkedII = "checked";
-                    editable = false;
-                    cellclassname = "readonly";
+                 //   editable = false;
+                 //   cellclassname = "readonly";
                     disabled = "disabled";
                 }
 

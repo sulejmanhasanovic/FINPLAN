@@ -354,6 +354,7 @@ switch ($id)
                 case 'plant_sources':
                     $plantid=$_COOKIE['plantid'];
                     $curr=$_COOKIE['curr'];
+                    $iddata=$_COOKIE['iddata'];
                     $fid=$curr;
                     $fid .= '_';
 				    $fid .= $plantid;
@@ -361,21 +362,46 @@ switch ($id)
                     $apd = new XmlData($caseStudyId,$apxml);
                     $and = new XmlData($caseStudyId,$anxml);
                     $xml = new XmlData($caseStudyId,$asxml);
-                    $add = new XmlData($caseStudyId,$adxml);
+                 //   $add = new XmlData($caseStudyId,$adxml);
 
                     if ($action == 'get')
                     {
-                        $ceData = $apd->getById($plantid);
-                      //  $ciData = $and->getById($_REQUEST['id']);
                         $cfData = $xml->getByField($fid,'fid');
+                        $ceData = $apd->getById($plantid);
+                        $ciData = $and->getByField($plantid,'pid');
                         $results['financesources']=$financeSources;
                         $results['ceData']=$ceData;
-                      //  $results['ciData']=$ciData;
+                        $results['ciData']=$ciData;
                         $results['cfData']=$cfData;
                         $results['id']=$plantid;
                     }
                 break;
 
+                case 'plant_termsfinancing':
+                    $plantid=$_COOKIE['plantid'];
+                    $curr=$_COOKIE['curr'];
+                    $fs=$_COOKIE['fs'];
+                    $fid=$curr.'_'.$plantid.'_'.$fs;
+                    $financeSources = Config::getData('financesource');
+                    $xml = new XmlData($caseStudyId,$auxml);
+
+                    if ($action == 'get')
+                    {
+                        $and = new XmlData($caseStudyId,$anxml);
+                        $apd = new XmlData($caseStudyId,$apxml);	
+                        $asd = new XmlData($caseStudyId,$asxml);
+                        $cpData = $apd->getById($plantid);
+                        $csData = $asd->getByField($plantid,'pid');
+                        $ciData = $and->getByField($plantid,'pid');
+                        $cfData = $xml->getByField($fid,'fid');
+                        $results['financesources']=$financeSources;
+                        $results['ciData']=$ciData;
+                        $results['cfData']=$cfData;
+                        $results['cpData']=$cpData;
+                        $results['csData']=$csData;
+                        $results['id']=$plantid;
+                    }
+                break;
 
 }
 
@@ -447,6 +473,20 @@ if ($action == 'edit')
             $xml->deleteById($iddata);
 			$xml->add($data);
         break;
+
+        case 'plant_termsfinancing':
+            $data=json_decode($_POST['data'], true);
+            $pid=$_COOKIE['plantid'];
+            $iddata=$_COOKIE['iddata'];
+            $data['pid']=$pid;
+            $curr=$_COOKIE['curr'];
+            $fs=$_COOKIE['fs'];
+            $fid=$curr.'_'.$plantid.'_'.$fs;
+            $data['fid']=$fid;
+            unset($data['sid']);
+            $xml->deleteById($iddata);
+			$xml->add($data);
+        break;   
 
         default:
             $xml->deleteByField(1, 'sid');

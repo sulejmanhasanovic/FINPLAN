@@ -93,20 +93,7 @@ var decimal='d'+d.toString();
             object['sid'] = '1';
 
         //D
-        if (rows!==undefined && rows.length>0
-        //id == "general_inflation" 
-        //|| id=="general_exchangerate" 
-        //|| id=="taxation_depreciation" 
-        //|| id=="taxation_royalty" 
-        //|| id=="balancesheet_investment"  
-        //|| id=="balancesheet_oldloans" 
-        //|| id=="balancesheet_oldbonds" 
-        //|| id=="sales_consumers" 
-        //|| id=="financialmanager_equity" 
-        //|| id=="financialmanager_loans" 
-        //|| id=="financialmanager_bonds"
-        //|| id=="plant_production"
-        ) {
+        if (rows!==undefined && rows.length>0) {
             cols=cols.records;
             for (var i = 1; i < cols.length; i++) {
                 for (var j = 0; j < rows.length; j++) {
@@ -122,7 +109,7 @@ var decimal='d'+d.toString();
             }
         }
         datanotes=$('#dataNotes').val();
-console.log(object);
+
 //return false;
         $.ajax({
             url: urlData,

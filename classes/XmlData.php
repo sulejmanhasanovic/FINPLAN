@@ -185,6 +185,7 @@ class XmlData extends Base {
 		$data->item(0)->appendChild($newRow);
 
 		$this->_setAutoIncrementId($id);
+		$this->formatOutput = true;
 		$this->saveXML();
 	}
 
@@ -280,6 +281,7 @@ class XmlData extends Base {
 	}
 
 	public function saveXML(){
+		$this->dom->formatOutput = true;
 		$this->dom->save($this->xmlFile);
 	}
 }

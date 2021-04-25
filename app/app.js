@@ -381,6 +381,14 @@ function required(name, message){
     return ret;
 }
 
+function check(value){
+    if (value==undefined){
+        return "";
+    }else{
+        return value;
+    }
+}
+
 var tabs = [];
 //D
 tabs['general'] = ['general_information', 'general_inflation', 'general_exchangerate'];

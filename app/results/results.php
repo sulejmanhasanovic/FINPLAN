@@ -1060,14 +1060,14 @@
 
 	function formatnumber($number){
 		if($number=="NAN" || $number=="INF" || $number=="n.a." || $number==""){
-		$num=0.000000000000000;
-	}else{
-		if(is_nan($number)){
-			$num=number_format(0,15,'.','');
-		}else{
-		$num=number_format((double)$number,15,'.','');
+			$num=0.000000000000000;
 		}
-	}
+		
+		if(!is_numeric($number) && ($number!="NAN" && $number!="INF" && $number!="n.a." && $number!="")){
+			$num=$number;
+		}else{
+			$num=number_format((double)$number,15,'.','');
+		}
 		return $num;
 	}
 	

@@ -1,5 +1,6 @@
 //get data
 function getinflation(results) {
+    console.log(results);
     var cedata = results['ceData'];
     var startYear = results['startYear'];
     var endYear = results['endYear'];
@@ -35,8 +36,8 @@ function showData(results) {
             var cellclassname = "";
             if (cedata["RateType" + bothCurr[j]] == "SR") {
                 checkedSR = "checked";
-                editable = false;
-                cellclassname = "readonly"
+               // editable = false;
+               // cellclassname = "readonly"
             }
 
             var checkedYR = "";
