@@ -262,7 +262,7 @@ function CreateGrid(cols, result, columngroups) {
             cellsformat: decimal,
             columntype: 'numberinput',
             cellsrenderer: cellsrenderer,
-            cellclassname: cols[y]['cellclassname']
+            cellclassname: cols[y]['cellclassname']==undefined ? '' :cols[y]['cellclassname']
         });
     }
 

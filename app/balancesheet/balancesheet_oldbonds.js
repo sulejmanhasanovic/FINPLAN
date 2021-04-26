@@ -3,22 +3,18 @@ function getoldbonds(results) {
     var ctdata = results['ctData'];
     var startYear = results['startYear'];
     var endYear = results['endYear'];
-    var baseCurrency = results['baseCurrency'];
-    var curTypeSel = results['curTypeSel'].split(',');
+    var bothCurr = results['bothCurr'].split(',');
     var datar = [];
     for (var i = startYear; i <= endYear; i++) {
 
         var data = new Array();
         data['id'] = i;
         data['item'] = i.toString();
-        for (var j = 0; j < curTypeSel.length; j++) {
-            data['B_' + curTypeSel[j]] = ctdata['B_' + curTypeSel[j] + '_' + i];
-            data['R_' + curTypeSel[j]] = ctdata['R_' + curTypeSel[j] + '_' + i];
-            data['I_' + curTypeSel[j]] = ctdata['I_' + curTypeSel[j] + '_' + i];
+        for (var j = 0; j < bothCurr.length; j++) {
+            data['B_' + bothCurr[j]] = ctdata['B_' + bothCurr[j] + '_' + i];
+            data['R_' + bothCurr[j]] = ctdata['R_' + bothCurr[j] + '_' + i];
+            data['I_' + bothCurr[j]] = ctdata['I_' + bothCurr[j] + '_' + i];
         }
-        data['B_' + baseCurrency] = ctdata['B_' + baseCurrency + '_' + i];
-        data['R_' + baseCurrency] = ctdata['R_' + baseCurrency + '_' + i];
-        data['I_' + baseCurrency] = ctdata['I_' + baseCurrency + '_' + i];
         datar.push(data);
     }
     return datar;

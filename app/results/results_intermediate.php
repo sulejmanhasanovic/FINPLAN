@@ -8,21 +8,49 @@
 	$results['endYear'] = $endYear;
 	$results['baseCurrency'] = $baseCurrency;
 	$results['curTypeSel'] = $curTypeSel;
-	
+
 	$bothCurr = $baseCurrency;
 	$bothCurrBase = $baseCurrency;
-	
+
 	if($curTypeSel){
 		$bothCurr = $curTypeSel.','.$baseCurrency;
 		$bothCurrBase = $baseCurrency.','.$curTypeSel;
 	}
-	
+
 	$results['bothCurr'] = $bothCurr;
 	$results['bothCurrBase'] = $bothCurrBase;
 
+	$currencies = Config::getData('currencies');
+	$results['currencies']=$currencies;
+	$results['tableid']=$_REQUEST['id'];
     //Manage files
     switch($_REQUEST['id']){
+		case "1.1.":
+			$aad = new XmlData($caseStudyId,$aaxml);
+			$aaData = $aad->getAll();
+			foreach($aaData as $row){
+				$tid = $row['id'];
+			}
+			
+			$cod = new XmlData($caseStudyId,$coxml);
+			$coData = $cod->getByField('1','sid');
+			
+			$cad = new XmlData($caseStudyId,$caxml);
+			$caData = $cad->getByField(1,'sid');
+			
+			$cbd = new XmlData($caseStudyId,$cbxml);
+			$cbData = $cbd->getByField(1,'sid');
+
+			$data = $aad->getById($tid);
+			$results['allyears']=$AllYear;
+			$results['results']=$data;
+			$results['caData']=$caData;
+			$results['cbData']=$cbData;
+			$results['coData']=$coData;
+        	echo (json_encode($results));
+			break;
 		case '2.1.':
+		case '2.2.':
 			$cad = new XmlData($caseStudyId,$caxml);
 			$data = $cad->getByField(1,'sid');
 			$results['allyears']=$AllYear;
@@ -30,34 +58,88 @@
         	echo (json_encode($results));
 		break;	
 		
-		case "1.2.": 
+		case "3.1.":
+		case "3.2.":
+			$cbd = new XmlData($caseStudyId,$cbxml);
+			$data = $cbd->getByField(1,'sid');
+			$results['allyears']=$AllYear;
+			$results['results']=$data;
         	echo (json_encode($results));
 		break;
 
-		case '1.4.':
+		case '4.1.':
+			$add = new XmlData($caseStudyId,$adxml);
+			$data = $add->getByField(1,'sid');
+			$results['allyears']=$AllYear;
+			$results['results']=$data;
 			echo (json_encode($results));
 		break;
 
-		case "1.5.":
+		case "4.2.":
+			$acd = new XmlData($caseStudyId,$acxml);
+			$data = $acd->getByField(1,'sid');
+			$results['allyears']=$AllYear;
+			$results['results']=$data;
 			echo (json_encode($results));
 		break;
 
-		case "1.6.": 
-			echo (json_encode($results));	
+		case "5.1.": 
+			$agd = new XmlData($caseStudyId,$agxml);
+			$data = $agd->getByField(1,'sid');
+			$results['allyears']=$AllYear;
+			$results['results']=$data;
+        	echo (json_encode($results));
 		break;
+
+		case "5.2.": 
+		case "5.3.": 
+			$cnd = new XmlData($caseStudyId,$cnxml);
+			$data = $cnd->getByField(1,'sid');
+			$results['allyears']=$AllYear;
+			$results['results']=$data;
+        	echo (json_encode($results));
+		break;
+
+		case "6.1.":
+			$_loans = new XmlData($caseStudyId,$loans_data);
+			$_cal_loans = new XmlData($caseStudyId,$cal_loans);
+
+			$data = $_loans->getByField(1,'sid');
+			$datacal=$_cal_loans->getByField(1,'sid');
+			$results['allyears']=$AllYear;
+			$results['results']=$data;
+			$results['resultscal']=$datacal;
+        	echo (json_encode($results));
+		break;
+
+		case "6.3.":
+		case "6.4.":
+			$cid = new XmlData($caseStudyId,$cixml);
+			$data = $cid->getByField(1,'sid');
+			$results['allyears']=$AllYear;
+			$results['results']=$data;
+        	echo (json_encode($results));
+		break;
+
+		case "7.1.":
+		case "7.2.":
+			$ccd = new XmlData($caseStudyId,$cixml);
+			$data = $ccd->getByField(1,'sid');
+			$results['allyears']=$AllYear;
+			$results['results']=$data;
+        	echo (json_encode($results));
+		break;
+
+		case "8.2.":
+			$financeSources = Config::getData('financesource');
+			$bqd = new XmlData($caseStudyId,$bqxml);
+			$data = $bqd->getByField(1,'sid');
+			$results['allyears']=$AllYear;
+			$results['results']=$data;
+			$results['financesources']=$financeSources;
+        	echo (json_encode($results));
+		break;
+		
 	}
 
-	function formatnumber($number){
-		if($number=="NAN" || $number=="INF" || $number=="n.a." || $number==""){
-		$num=0.000000000000000;
-	}else{
-		if(is_nan($number)){
-			$num=number_format(0,15,'.','');
-		}else{
-		$num=number_format((double)$number,15,'.','');
-		}
-	}
-		return $num;
-	}
-	
 	?>
