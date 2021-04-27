@@ -139,6 +139,68 @@
 			$results['financesources']=$financeSources;
         	echo (json_encode($results));
 		break;
+
+		case "8.3.":
+		case "8.4.":
+		case "8.5.":
+			$financeSources = Config::getData('financesource');
+			$chd = new XmlData($caseStudyId,$chxml);
+			$data = $chd->getByField(1,'sid');
+			$results['allyears']=$AllYear;
+			$results['results']=$data;
+			$results['financesources']=$financeSources;
+        	echo (json_encode($results));
+		break;
+
+		case "9.1.":
+			$cdd = new XmlData($caseStudyId,$cdxml);
+			$data = $cdd->getByField(1,'sid');
+			$cnd = new XmlData($caseStudyId,$cnxml);
+			$datacn = $cnd->getByField(1,'sid');
+			$results['allyears']=$AllYear;
+			$results['results']=$data;
+			$results['resultscn']=$datacn;
+        	echo (json_encode($results));
+		break;
+
+		case "10.1.":
+			$cld = new XmlData($caseStudyId,$clxml);
+			$datacl = $cld->getByField(1,'sid');
+			$ctd = new XmlData($caseStudyId,$ctxml);
+			$data = $ctd->getByField(1,'sid');
+			$results['allyears']=$AllYear;
+			$results['results']=$data;
+			$results['resultscl']=$datacl;
+        	echo (json_encode($results));
+		break;
+
+		case "10.2.":
+			$cad = new XmlData($caseStudyId,$caxml);
+			$caData = $cad->getByField(1,'sid');
+			$cbd = new XmlData($caseStudyId,$cbxml);
+			$cbData = $cbd->getByField(1,'sid');
+			$ccd = new XmlData($caseStudyId,$ccxml);
+			$ccData = $ccd->getByField(1,'sid');
+			$chd = new XmlData($caseStudyId,$chxml);
+			$chData = $chd->getByField(1,'sid');
+			$cdd = new XmlData($caseStudyId,$cdxml);
+			$cdData = $cdd->getByField(1,'sid');
+			$cid = new XmlData($caseStudyId,$cixml);
+			$ciData = $cid->getByField(1,'sid');
+				
+			$cld = new XmlData($caseStudyId,$clxml);
+			$clData = $cld->getByField(1,'sid');
+
+			$results['allyears']=$AllYear;
+			$results['caData']=$caData;
+			$results['cbData']=$cbData;
+			$results['ccData']=$ccData;
+			$results['cdData']=$cdData;
+			$results['chData']=$chData;
+			$results['ciData']=$ciData;
+			$results['clData']=$clData;
+        	echo (json_encode($results));
+		break;
 		
 	}
 

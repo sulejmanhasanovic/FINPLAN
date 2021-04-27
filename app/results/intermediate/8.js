@@ -4,12 +4,12 @@ function getexportcredits(results) {
     var endYear = results['endYear'];
     var ctdata = results['results'];
     var financesources=results['financesources'];
+    var curTypeSel = results['curTypeSel'].split(',');
     var bothCurr = results['bothCurr'].split(',');
     var tableid = results['tableid'];
     var datar = [];
     switch (tableid) {       
         case "8.2.":
-
         for (var i = startYear; i <= endYear; i++) {
             var data = new Array();
             data['id'] = i;
@@ -23,24 +23,56 @@ function getexportcredits(results) {
                         data['Int_'+bothCurr[j]+'_'+fid] = ctdata['Int_'+bothCurr[j]+'_'+fid + '_' + i];
                         data['Repy_'+bothCurr[j]+'_'+fid] = ctdata['Repy_'+bothCurr[j]+'_'+fid+ '_' + i];
                     }
-                    datar.push(data);
                 }
             }
-            
+            datar.push(data);
         }
         break;
 
         case "8.3.":
-        for (var i = startYear; i <= endYear; i++) {
-            var data = new Array();
-            data['id'] = i;
-            data['item'] = i.toString();
-            data['BLC'] = ctdata['BLC_' + i];
-            data['OLC'] = ctdata['OLC_' + i];
-            data['ILC'] = ctdata['ILC_' + i];
-            data['RLC'] = ctdata['RLC_' + i];
-            datar.push(data);
-        }
+            for (var i = startYear; i <= endYear; i++) {
+                var data = new Array();
+                data['id'] = i;
+                data['item'] = i.toString();
+                for(var k=0; k<financesources.length; k++){
+                    if(financesources[k]['type']=='E'){
+                        var fid=financesources[k]['id'];
+                        data['LLC_'+fid] = ctdata['LLC_'+fid + '_' + i];
+                        data['BLC_'+fid] = ctdata['BLC_'+fid + '_' + i];
+                        data['ILC_'+fid] = ctdata['ILC_'+fid + '_' + i];
+                        data['RLC_'+fid] = ctdata['RLC_'+fid + '_' + i];
+                    }
+                }
+                datar.push(data);
+            }
+        break;
+
+        case "8.4.":
+            for (var i = startYear; i <= endYear; i++) {
+                var data = new Array();
+                data['id'] = i;
+                data['item'] = i.toString();
+                for (var j = 0; j < curTypeSel.length; j++) {
+                    data['L_'+curTypeSel[j]] = ctdata['L_'+curTypeSel[j] + '_' + i];
+                    data['B_'+curTypeSel[j]] = ctdata['B_'+curTypeSel[j] + '_' + i];
+                    data['I_'+curTypeSel[j]] = ctdata['I_'+curTypeSel[j] + '_' + i];
+                    data['R_'+curTypeSel[j]] = ctdata['R_'+curTypeSel[j] + '_' + i];
+                }
+                datar.push(data);
+            }
+        break;
+
+        case "8.5.":
+            for (var i = startYear; i <= endYear; i++) {
+                var data = new Array();
+                data['id'] = i;
+                data['item'] = i.toString();
+                data['LLC'] = ctdata['LLC_' + i];
+                data['BLC'] = ctdata['BLC_' + i];
+                data['ILC'] = ctdata['ILC_' + i];
+                data['RLC'] = ctdata['RLC_' + i];
+                datar.push(data);
+            }
         break;
     }
     console.log(datar);
@@ -49,6 +81,7 @@ function getexportcredits(results) {
 
 function showData(results) {
     var bothCurr = results['bothCurr'].split(',');
+    var curTypeSel = results['curTypeSel'].split(',');
     var currencies = results['currencies'];
     var financesources=results['financesources'];
     var tableid = results['tableid'];
@@ -98,17 +131,90 @@ function showData(results) {
         }
     }
         break;
-        case "7.2.":
+        case "8.3.":
+            for(var k=0; k<financesources.length; k++){
+                if(financesources[k]['type']=='E'){
+                    var fid=financesources[k]['id'];
+                    columngroups.push({
+                        text: financesources[k]['value']+' (Million)',
+                        align: 'center',
+                        name: fid
+                    });
+                    cols.push({
+                        name: 'LLC_' + fid,
+                        columngroup: fid,
+                        map: 'LLC_' + fid,
+                        text: 'Drawdowns'
+                    });
+                    cols.push({
+                        name: 'BLC_'+fid,
+                        columngroup: fid,
+                        map: 'BLC_'+fid,
+                        text: 'Balance'
+                    });
+                    cols.push({
+                        name: 'ILC_'+fid,
+                        columngroup: fid,
+                        map: 'ILC_'+fid,
+                        text: 'Interest'
+                    });
+                    cols.push({
+                        name: 'RLC_'+fid,
+                        columngroup: fid,
+                        map: 'RLC_'+fid,
+                        text: 'Repayment'
+                    });
+                }
+            }
+        break;
 
+        case "8.4.":
+            for (var j = 0; j < curTypeSel.length; j++) {
+                var currencyName = $.grep(currencies, function (v) {
+                    return v.id === curTypeSel[j];
+                })[0]['value'];
+                columngroups.push({
+                    text: currencyName+' (Million)',
+                    align: 'center',
+                    name: currencyName
+                });
+                cols.push({
+                    name: 'L_' + curTypeSel[j],
+                    columngroup: currencyName,
+                    map: 'L_' + curTypeSel[j],
+                    text: 'Drawdowns'
+                });
+                cols.push({
+                    name: 'B_'+curTypeSel[j],
+                    columngroup: currencyName,
+                    map: 'B_'+curTypeSel[j],
+                    text: 'Balance'
+                });
+                cols.push({
+                    name: 'I_'+curTypeSel[j],
+                    columngroup: currencyName,
+                    map: 'I_'+curTypeSel[j],
+                    text: 'Interest'
+                });
+                cols.push({
+                    name: 'R_'+curTypeSel[j],
+                    columngroup: currencyName,
+                    map: 'R_'+curTypeSel[j],
+                    text: 'Repayment'
+                });
+            }
+        break;
+
+        case "8.5.":
+            cols.push({
+                name: 'LLC',
+                map: 'LLC',
+                text: 'Drawdowns'
+            });
             cols.push({
                 name: 'BLC',
                 map: 'BLC',
-                text: 'Issue'
-            });
-            cols.push({
-                name: 'OLC',
-                map: 'OLC',
-                text: 'Outstanding'
+                text: 'Balance'
             });
             cols.push({
                 name: 'ILC',

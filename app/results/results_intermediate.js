@@ -228,8 +228,8 @@ function getcontenttable(){
     row['title']='Foreign currencies';
     
     row['tables']=[
-        {'id':'10.1.', 'title':'Requirements'},
-        {'id':'10.2.', 'title':'Outstanding'} 
+        {'id':'10.1.', 'title':'Foreign currencies requirements'},
+        {'id':'10.2.', 'title':'Foreign currencies outstanding'} 
     ];
     content.push(row); 
 
