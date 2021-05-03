@@ -277,6 +277,7 @@ function CreateGrid(cols, result, columngroups) {
         altrows: true,
         enabletooltips: true,
         editable: true,
+        columnsresize : true,
         columns: plcolumns,
         columngroups: columngroups
 

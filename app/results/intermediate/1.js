@@ -81,40 +81,53 @@ function getbalancesheet(results) {
 }
 
 function showData(results) {
+    var currencies=results['currencies'];
+    var baseCurrency=results['baseCurrency'];
+    var startYear=results['startYear'];
+    var initialYear=startYear*1-1;
+
+    var baseCurrencyName = $.grep(currencies, function(v) {
+        return v.id === baseCurrency;
+    })[0]['value'];
+
     var cols=[];
-    // var columngroups = [];
-    // columngroups.push({
-    //     text: 'Assets',
-    //     align: 'center',
-    //     name: currencyName
-    // });
+    var columngroups = [];
+    columngroups.push({
+        text: "Initial balance sheet of "+initialYear+" (Million " +baseCurrencyName+")",
+        align: 'center',
+        name: baseCurrency
+    });
 
     cols.push({
         name: 'assets',
+        columngroup: baseCurrency,
         map: 'assets',
         text: 'Assets',
         type:'string'
     });
     cols.push({
         name: 'assetsvalue',
+        columngroup: baseCurrency,
         map: 'assetsvalue',
         text: 'Values',
         type:'number'
     });
     cols.push({
         name: 'equity',
+        columngroup: baseCurrency,
         map: 'equity',
         text: 'Equity and liabilities',
         type:'string'
     });
     cols.push({
         name: 'equityvalue',
+        columngroup: baseCurrency,
         map: 'equityvalue',
         text: 'Values',
         type:'number'
     });
       
-    CreateGridBS(cols, getbalancesheet(results));
+    CreateGridBS(cols, getbalancesheet(results), columngroups);
 }
 
 function CreateGridBS(cols, result, columngroups) {
@@ -132,16 +145,6 @@ function CreateGridBS(cols, result, columngroups) {
         datafields: datastructure
     };
     var dataAdapter = new $.jqx.dataAdapter(source);
-    // var cellclassname = function (row, column, value, data) {
-    //         return data.css;
-    // };
-
-    // let cellsrenderer = function (row, columnfield, value, defaulthtml, columnproperties) {
-    //     if (value != '' || value == '0') {
-    //         var formattedValue = $.jqx.dataFormat.formatnumber(value, window.decimal);
-    //         return '<span style="margin: 4px; float:right; ">' + formattedValue + '</span>';
-    //     }
-    // };
 
     var plcolumns = [];
     for (var y = 0; y < cols.length; y++) {
@@ -153,7 +156,6 @@ function CreateGridBS(cols, result, columngroups) {
             columngroup: cols[y]['columngroup'],
             editable: cols[y]['editable'],
             width:'25%',
-        //    cellsrenderer: cellsrenderer,
             cellclassname: cols[y]['cellclassname']==undefined ? '' :cols[y]['cellclassname']
         });
     }

@@ -13,10 +13,10 @@ function getoldloans(results) {
             data['id'] = i;
             data['item'] = i.toString();
             for (var j = 0; j < bothCurr.length; j++) {
-                data['LN_' + bothCurr[j]] = ctdata['LN_' + bothCurr[j] + '_' + i];
-                data['L_' + bothCurr[j]] = ctdata['L_' + bothCurr[j] + '_' + i];
-                data['I_' + bothCurr[j]] = ctdata['I_' + bothCurr[j] + '_' + i];
-                data['R_' + bothCurr[j]] = ctdata['R_' + bothCurr[j] + '_' + i];
+                data['LN_' + bothCurr[j]] = checkval(ctdata['LN_' + bothCurr[j] + '_' + i]);
+                data['L_' + bothCurr[j]] =  checkval(ctdata['L_' + bothCurr[j] + '_' + i]);
+                data['I_' + bothCurr[j]] =  checkval(ctdata['I_' + bothCurr[j] + '_' + i]);
+                data['R_' + bothCurr[j]] =  checkval(ctdata['R_' + bothCurr[j] + '_' + i]);
             }
             datar.push(data);
         }
@@ -26,10 +26,10 @@ function getoldloans(results) {
             var data = new Array();
             data['id'] = i;
             data['item'] = i.toString();
-            data['LNL'] = ctdata['LNL_' + i];
-            data['LL'] = ctdata['LL_' + i];
-            data['IL'] = ctdata['IL_' + i];
-            data['RL'] = ctdata['RL_' + i];
+            data['LNL'] = checkval(ctdata['LNL_' + i]);
+            data['LL'] =  checkval(ctdata['LL_' + i]);
+            data['IL'] =  checkval(ctdata['IL_' + i]);
+            data['RL'] =  checkval(ctdata['RL_' + i]);
             datar.push(data);
         }
     }
@@ -86,18 +86,18 @@ function showData(results) {
             text: 'Committed Drawdown'
         });
         cols.push({
-            name: 'L',
-            map: 'L',
+            name: 'LL',
+            map: 'LL',
             text: 'Outstanding'
         });
         cols.push({
-            name: 'I',
-            map: 'I',
+            name: 'IL',
+            map: 'IL',
             text: 'Interest'
         });
         cols.push({
-            name: 'R',
-            map: 'R',
+            name: 'RL',
+            map: 'RL',
             text: 'Repayments'
         });
     }

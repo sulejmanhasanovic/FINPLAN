@@ -20,10 +20,10 @@ function getequity(results) {
                     data['DivL'] = 0;
                 } else {
 
-                    data['N'] = ctdata['N_' + i];
-                    data['T'] = ctdata['T_' + i];
-                    data['E'] = ctdata['E_' + i];
-                    data['DivL'] = cndata['DivL_' + i];
+                    data['N'] = checkval(ctdata['N_' + i]);
+                    data['T'] = checkval(ctdata['T_' + i]);
+                    data['E'] = checkval(ctdata['E_' + i]);
+                    data['DivL'] = checkval(cndata['DivL_' + i]);
                 }
                 datar.push(data);
                 x++;

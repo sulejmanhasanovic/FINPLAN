@@ -13,10 +13,10 @@ function getoldbonds(results) {
             data['id'] = i;
             data['item'] = i.toString();
             for (var j = 0; j < bothCurr.length; j++) {
-                data['BD_' + bothCurr[j]] = ctdata['BD_' + bothCurr[j] + '_' + i];
-                data['B_' + bothCurr[j]] = ctdata['B_' + bothCurr[j] + '_' + i];
-                data['I_' + bothCurr[j]] = ctdata['I_' + bothCurr[j] + '_' + i];
-                data['R_' + bothCurr[j]] = ctdata['R_' + bothCurr[j] + '_' + i];
+                data['BD_' + bothCurr[j]] =checkval( ctdata['BD_' + bothCurr[j] + '_' + i]);
+                data['B_' + bothCurr[j]] = checkval(ctdata['B_' + bothCurr[j] + '_' + i]);
+                data['I_' + bothCurr[j]] = checkval(ctdata['I_' + bothCurr[j] + '_' + i]);
+                data['R_' + bothCurr[j]] = checkval(ctdata['R_' + bothCurr[j] + '_' + i]);
             }
             datar.push(data);
         }
@@ -26,10 +26,10 @@ function getoldbonds(results) {
             var data = new Array();
             data['id'] = i;
             data['item'] = i.toString();
-            data['BDL'] = ctdata['BDL_' + i];
-            data['BL'] = ctdata['BL_' + i];
-            data['IL'] = ctdata['IL_' + i];
-            data['RL'] = ctdata['RL_' + i];
+            data['BDL'] =checkval( ctdata['BDL_' + i]);
+            data['BL'] = checkval(ctdata['BL_' + i]);
+            data['IL'] = checkval(ctdata['IL_' + i]);
+            data['RL'] = checkval(ctdata['RL_' + i]);
             datar.push(data);
         }
     }

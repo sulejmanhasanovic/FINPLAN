@@ -14,10 +14,10 @@ function getnewloans(results) {
             data['id'] = i;
             data['item'] = i.toString();
             for (var j = 0; j < bothCurr.length; j++) {
-                data['B_'+bothCurr[j]] = ctdata['B_'+bothCurr[j]+'_'+i];
-                data['O_'+bothCurr[j]] = ctdata['O_'+bothCurr[j] + '_' + i];
-                data['I_'+bothCurr[j]] = ctdata['I_'+bothCurr[j] + '_' + i];
-                data['R_'+bothCurr[j]] = ctdata['R_'+bothCurr[j] + '_' + i];
+                data['B_'+bothCurr[j]] = checkval(ctdata['B_'+bothCurr[j]+'_'+i]);
+                data['O_'+bothCurr[j]] = checkval(ctdata['O_'+bothCurr[j] + '_' + i]);
+                data['I_'+bothCurr[j]] = checkval(ctdata['I_'+bothCurr[j] + '_' + i]);
+                data['R_'+bothCurr[j]] = checkval(ctdata['R_'+bothCurr[j] + '_' + i]);
             }
             datar.push(data);
         }
@@ -28,10 +28,10 @@ function getnewloans(results) {
             var data = new Array();
             data['id'] = i;
             data['item'] = i.toString();
-            data['BLC'] = ctdata['BLC_' + i];
-            data['OLC'] = ctdata['OLC_' + i];
-            data['ILC'] = ctdata['ILC_' + i];
-            data['RLC'] = ctdata['RLC_' + i];
+            data['BLC'] = checkval(ctdata['BLC_' + i]);
+            data['OLC'] = checkval(ctdata['OLC_' + i]);
+            data['ILC'] = checkval(ctdata['ILC_' + i]);
+            data['RLC'] = checkval(ctdata['RLC_' + i]);
             datar.push(data);
         }
         break;

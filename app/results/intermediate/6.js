@@ -7,6 +7,8 @@ function getnewloans(results) {
     var baseCurrency = results['baseCurrency'];
     var bothCurr = results['bothCurr'].split(',');
     var currencies = results['currencies'];
+    var plants=results['plants'];
+    var rows=results['rows'];
     var tableid = results['tableid'];
     var baseCurrencyName = $.grep(currencies, function (v) {
         return v.id === baseCurrency;
@@ -19,19 +21,50 @@ function getnewloans(results) {
                 data['id'] = i;
                 data['item'] = i.toString();
                 for (var j = 0; j < bothCurr.length; j++) {
-                    data['A_'+bothCurr[j]] = ctdata['A_'+bothCurr[j]+'_'+i];
-                    data['B_'+bothCurr[j]] = ctdatacal['B_'+bothCurr[j] + '_' + i];
-                    data['I_'+bothCurr[j]] = ctdatacal['I_'+bothCurr[j] + '_' + i];
-                    data['R_'+bothCurr[j]] = ctdatacal['R_'+bothCurr[j] + '_' + i];
+                    data['A_'+bothCurr[j]] = checkval(ctdata['A_'+bothCurr[j]+'_'+i]);
+                    data['B_'+bothCurr[j]] = checkval(ctdatacal['B_'+bothCurr[j] + '_' + i]);
+                    data['I_'+bothCurr[j]] = checkval(ctdatacal['I_'+bothCurr[j] + '_' + i]);
+                    data['R_'+bothCurr[j]] = checkval(ctdatacal['R_'+bothCurr[j] + '_' + i]);
                 }
 
-                data['TD'] = ctdatacal['TD_'+i];
-                data['TB'] = ctdatacal['TB_'+i];
-                data['TI'] = ctdatacal['TI_'+i];
-                data['TR'] = ctdatacal['TR_'+i];
+                data['TD'] = checkval(ctdatacal['TD_'+i]);
+                data['TB'] = checkval(ctdatacal['TB_'+i]);
+                data['TI'] = checkval(ctdatacal['TI_'+i]);
+                data['TR'] = checkval(ctdatacal['TR_'+i]);
 
                 datar.push(data);
             }
+        break;
+
+        case "6.2.":
+            if(plants){
+                $("#tabdetail").show();
+                var controls="<ul class='nav nav-tabs' id='plantnavs'>";
+                for(var i=0; i<plants.length; i++){
+                    var active="";
+                    if(i==0)
+                    active="active";
+
+                    controls+="<li role='presentation' class='"+active+"'> \
+                    <a class='pointer' onclick='getDataDetail("+plants[i]['id']+", \"loans\", this, "+rows[i]+")' id='plant_"+plants[i]['id']+"> \
+                        <span lang='en'>"+plants[i]['name']+"</span></a></li>";
+                }
+                $("#tabdetail").html(controls);
+            }
+            var rowid=results['rowid'];
+            for (var i = startYear; i <= endYear; i++) {
+                var data = new Array();
+                data['id'] = i;
+                data['item'] = i.toString();
+                for (var j = 0; j < bothCurr.length; j++) {
+                    data['DD_'+bothCurr[j]+'_L1'] = checkval(ctdata['DD_'+bothCurr[j]+'_L1_'+i]);
+                    data['Bal_'+bothCurr[j]+'_L1'] = checkval(ctdata['Bal_'+bothCurr[j] + '_L1_' + i]);
+                    data['Int_'+bothCurr[j]+'_L1'] = checkval(ctdata['Int_'+bothCurr[j] + '_L1_' + i]);
+                    data['Repy_'+bothCurr[j]+'_L1'] = checkval(ctdata['Repy_'+bothCurr[j] + '_L1_' + i+'_'+rowid]);
+                }
+                datar.push(data);
+            }
+
         break;
         
         case "6.3.":
@@ -40,10 +73,10 @@ function getnewloans(results) {
             data['id'] = i;
             data['item'] = i.toString();
             for (var j = 0; j < bothCurr.length; j++) {
-                data['L_'+bothCurr[j]] = ctdata['L_'+bothCurr[j]+'_'+i];
-                data['B_'+bothCurr[j]] = ctdata['B_'+bothCurr[j] + '_' + i];
-                data['I_'+bothCurr[j]] = ctdata['I_'+bothCurr[j] + '_' + i];
-                data['R_'+bothCurr[j]] = ctdata['R_'+bothCurr[j] + '_' + i];
+                data['L_'+bothCurr[j]] = checkval(ctdata['L_'+bothCurr[j]+'_'+i]);
+                data['B_'+bothCurr[j]] = checkval(ctdata['B_'+bothCurr[j] + '_' + i]);
+                data['I_'+bothCurr[j]] = checkval(ctdata['I_'+bothCurr[j] + '_' + i]);
+                data['R_'+bothCurr[j]] = checkval(ctdata['R_'+bothCurr[j] + '_' + i]);
             }
             datar.push(data);
         }
@@ -54,10 +87,10 @@ function getnewloans(results) {
             var data = new Array();
             data['id'] = i;
             data['item'] = i.toString();
-            data['LLC'] = ctdata['LLC_' + i];
-            data['BLC'] = ctdata['BLC_' + i];
-            data['ILC'] = ctdata['ILC_' + i];
-            data['RLC'] = ctdata['RLC_' + i];
+            data['LLC'] = checkval(ctdata['LLC_' + i]);
+            data['BLC'] = checkval(ctdata['BLC_' + i]);
+            data['ILC'] = checkval(ctdata['ILC_' + i]);
+            data['RLC'] = checkval(ctdata['RLC_' + i]);
             datar.push(data);
         }
         break;
@@ -65,7 +98,7 @@ function getnewloans(results) {
     return datar;
 }
 
-function showData(results) {
+function showData(results, tableid) {
     var baseCurrency = results['baseCurrency'];
     var bothCurr = results['bothCurr'].split(',');
     var currencies = results['currencies'];
@@ -143,24 +176,48 @@ function showData(results) {
                 text: 'Repayment'
             });
         break;
+
         case "6.2.":
-            cols.push({
-                name: 'SLL',
-                map: 'SLL',
-                text: 'Drawdowns'
-            });
-            cols.push({
-                name: 'SLOLC',
-                map: 'SLOLC',
-                text: 'Balance'
-            });
-            cols.push({
-                name: 'SLLI',
-                map: 'SLLI',
-                text: 'Interest'
-            });
+            
+            for (var j = 0; j < bothCurr.length; j++) {
+                var currencyName = $.grep(currencies, function (v) {
+                    return v.id === bothCurr[j];
+                })[0]['value'];
+    
+                columngroups.push({
+                    text: currencyName + ' (Million)',
+                    align: 'center',
+                    name: currencyName
+                });
+                cols.push({
+                    name: 'DD_' + bothCurr[j]+'_L1',
+                    columngroup: currencyName,
+                    map: 'DD_' + bothCurr[j]+'_L1',
+                    text: 'Drawdown'
+                });
+                cols.push({
+                    name: 'Bal_'+bothCurr[j]+'_L1',
+                    columngroup: currencyName,
+                    map: 'Bal_'+bothCurr[j]+'_L1',
+                    text: 'Balance'
+                });
+                cols.push({
+                    name: 'Int_'+bothCurr[j]+'_L1',
+                    columngroup: currencyName,
+                    map: 'Int_'+bothCurr[j]+'_L1',
+                    text: 'Interest'
+                });
+                cols.push({
+                    name: 'Reply_'+bothCurr[j]+'_L1',
+                    columngroup: currencyName,
+                    map: 'Reply_'+bothCurr[j]+'_L1',
+                    text: 'Repayment'
+                });
+            }
         break;
+
         case "6.3.":
+
             for (var j = 0; j < bothCurr.length; j++) {
                 var currencyName = $.grep(currencies, function (v) {
                     return v.id === bothCurr[j];
@@ -221,10 +278,5 @@ function showData(results) {
             });
         break;
     }
-    if(columngroups.length==0){
-        CreateGrid(cols, getnewloans(results));
-    }else{
-         CreateGrid(cols, getnewloans(results), columngroups);
-    }
-   
+    CreateGrid(cols, getnewloans(results), columngroups);
 }

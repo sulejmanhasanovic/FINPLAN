@@ -13,8 +13,8 @@ function geteconomicparameters(results) {
             data['id'] = i;
             data['item'] = i.toString();
             for (var j = 0; j < bothCurr.length; j++) {
-                data[bothCurr[j]] = ctdata[bothCurr[j]+'_'+i];
-                data['I_'+bothCurr[j]] = ctdata['I_'+bothCurr[j] + '_' + i];
+                data[bothCurr[j]] = checkval(ctdata[bothCurr[j]+'_'+i]);
+                data['I_'+bothCurr[j]] = checkval(ctdata['I_'+bothCurr[j] + '_' + i]);
             }
             datar.push(data);
         }
@@ -24,7 +24,7 @@ function geteconomicparameters(results) {
             data['id'] = i;
             data['item'] = i.toString();
             for (var j = 0; j < curTypeSel.length; j++) {
-                data[curTypeSel[j]] = ctdata[curTypeSel[j] + '_' + i];
+                data[curTypeSel[j]] = checkval(ctdata[curTypeSel[j] + '_' + i]);
             }
             datar.push(data);
         }

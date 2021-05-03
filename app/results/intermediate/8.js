@@ -3,49 +3,73 @@ function getexportcredits(results) {
     var startYear = results['startYear'];
     var endYear = results['endYear'];
     var ctdata = results['results'];
-    var financesources=results['financesources'];
+    var financesources = results['financesources'];
     var curTypeSel = results['curTypeSel'].split(',');
     var bothCurr = results['bothCurr'].split(',');
     var tableid = results['tableid'];
+    var plants = results['plants'];
+    var rows = results['rows'];
+    var rowid = results['rowid'];
     var datar = [];
-    switch (tableid) {       
+    switch (tableid) {
+        case "8.1.":
         case "8.2.":
-        for (var i = startYear; i <= endYear; i++) {
-            var data = new Array();
-            data['id'] = i;
-            data['item'] = i.toString();
-            for(var k=0; k<financesources.length; k++){
-                if(financesources[k]['type']=='E'){
-                    var fid=financesources[k]['id'];
-                    for (var j = 0; j < bothCurr.length; j++) {
-                        data['DD_'+bothCurr[j]+'_'+fid] = ctdata['DD_'+bothCurr[j]+'_'+fid+'_'+i];
-                        data['Bal_'+bothCurr[j]+'_'+fid] = ctdata['Bal_'+bothCurr[j]+'_'+fid + '_' + i];
-                        data['Int_'+bothCurr[j]+'_'+fid] = ctdata['Int_'+bothCurr[j]+'_'+fid + '_' + i];
-                        data['Repy_'+bothCurr[j]+'_'+fid] = ctdata['Repy_'+bothCurr[j]+'_'+fid+ '_' + i];
+            if (tableid == "8.1.") {
+                if (plants) {
+                    $("#tabdetail").show();
+                    var controls = "<ul class='nav nav-tabs' id='plantnavs'>";
+                    for (var i = 0; i < plants.length; i++) {
+                        var active = "";
+                        if (i == 0)
+                            active = "active";
+
+                        controls += "<li role='presentation' class='" + active + "'> \
+                    <a class='pointer' onclick='getDataDetail(" + plants[i]['id'] + ", \"exportcredits\", this, " + rows[i] + ")' id='detail_" + plants[i]['id'] + "> \
+                        <span lang='en'>" + plants[i]['name'] + "</span></a></li>";
                     }
+                    $("#tabdetail").html(controls);
                 }
             }
-            datar.push(data);
-        }
-        break;
+            for (var i = startYear; i <= endYear; i++) {
+                var data = new Array();
+                data['id'] = i;
+                data['item'] = i.toString();
+                for (var k = 0; k < financesources.length; k++) {
+                    if (financesources[k]['type'] == 'E') {
+                        var fid = financesources[k]['id'];
+                        for (var j = 0; j < bothCurr.length; j++) {
+                            data['DD_' + bothCurr[j] + '_' + fid] = checkval(ctdata['DD_' + bothCurr[j] + '_' + fid + '_' + i]);
+                            data['Bal_' + bothCurr[j] + '_' + fid] =checkval( ctdata['Bal_' + bothCurr[j] + '_' + fid + '_' + i]);
+                            data['Int_' + bothCurr[j] + '_' + fid] =checkval( ctdata['Int_' + bothCurr[j] + '_' + fid + '_' + i]);
+                            if (tableid == "8.1.") {
+                                data['Repy_' + bothCurr[j] + '_' + fid] = checkval(ctdata['Repy_' + bothCurr[j] + '_' + fid + '_' + i]);
+                            } else {
+                                data['Repy_' + bothCurr[j] + '_' + fid] = checkval(ctdata['Repy_' + bothCurr[j] + '_' + fid + '_' + i + '_' + rowid]);
+                            }
+                        }
+                    }
+                }
+                datar.push(data);
+            }
+            break;
 
         case "8.3.":
             for (var i = startYear; i <= endYear; i++) {
                 var data = new Array();
                 data['id'] = i;
                 data['item'] = i.toString();
-                for(var k=0; k<financesources.length; k++){
-                    if(financesources[k]['type']=='E'){
-                        var fid=financesources[k]['id'];
-                        data['LLC_'+fid] = ctdata['LLC_'+fid + '_' + i];
-                        data['BLC_'+fid] = ctdata['BLC_'+fid + '_' + i];
-                        data['ILC_'+fid] = ctdata['ILC_'+fid + '_' + i];
-                        data['RLC_'+fid] = ctdata['RLC_'+fid + '_' + i];
+                for (var k = 0; k < financesources.length; k++) {
+                    if (financesources[k]['type'] == 'E') {
+                        var fid = financesources[k]['id'];
+                        data['LLC_' + fid] = checkval(ctdata['LLC_' + fid + '_' + i]);
+                        data['BLC_' + fid] = checkval(ctdata['BLC_' + fid + '_' + i]);
+                        data['ILC_' + fid] = checkval(ctdata['ILC_' + fid + '_' + i]);
+                        data['RLC_' + fid] = checkval(ctdata['RLC_' + fid + '_' + i]);
                     }
                 }
                 datar.push(data);
             }
-        break;
+            break;
 
         case "8.4.":
             for (var i = startYear; i <= endYear; i++) {
@@ -53,29 +77,29 @@ function getexportcredits(results) {
                 data['id'] = i;
                 data['item'] = i.toString();
                 for (var j = 0; j < curTypeSel.length; j++) {
-                    data['L_'+curTypeSel[j]] = ctdata['L_'+curTypeSel[j] + '_' + i];
-                    data['B_'+curTypeSel[j]] = ctdata['B_'+curTypeSel[j] + '_' + i];
-                    data['I_'+curTypeSel[j]] = ctdata['I_'+curTypeSel[j] + '_' + i];
-                    data['R_'+curTypeSel[j]] = ctdata['R_'+curTypeSel[j] + '_' + i];
+                    data['L_' + curTypeSel[j]] = checkval(ctdata['L_' + curTypeSel[j] + '_' + i]);
+                    data['B_' + curTypeSel[j]] = checkval(ctdata['B_' + curTypeSel[j] + '_' + i]);
+                    data['I_' + curTypeSel[j]] = checkval(ctdata['I_' + curTypeSel[j] + '_' + i]);
+                    data['R_' + curTypeSel[j]] = checkval(ctdata['R_' + curTypeSel[j] + '_' + i]);
                 }
                 datar.push(data);
             }
-        break;
+            break;
 
         case "8.5.":
             for (var i = startYear; i <= endYear; i++) {
                 var data = new Array();
                 data['id'] = i;
                 data['item'] = i.toString();
-                data['LLC'] = ctdata['LLC_' + i];
-                data['BLC'] = ctdata['BLC_' + i];
-                data['ILC'] = ctdata['ILC_' + i];
-                data['RLC'] = ctdata['RLC_' + i];
+                data['LLC'] = checkval(ctdata['LLC_' + i]);
+                data['BLC'] = checkval(ctdata['BLC_' + i]);
+                data['ILC'] = checkval(ctdata['ILC_' + i]);
+                data['RLC'] = checkval(ctdata['RLC_' + i]);
                 datar.push(data);
             }
-        break;
+            break;
     }
-    console.log(datar);
+
     return datar;
 }
 
@@ -83,60 +107,61 @@ function showData(results) {
     var bothCurr = results['bothCurr'].split(',');
     var curTypeSel = results['curTypeSel'].split(',');
     var currencies = results['currencies'];
-    var financesources=results['financesources'];
+    var financesources = results['financesources'];
     var tableid = results['tableid'];
     var cols = [];
     var columngroups = [];
     switch (tableid) {
 
+        case "8.1.":
         case "8.2.":
-            for(var k=0; k<financesources.length; k++){
-                if(financesources[k]['type']=='E'){
-                    var fid=financesources[k]['id'];
+            for (var k = 0; k < financesources.length; k++) {
+                if (financesources[k]['type'] == 'E') {
+                    var fid = financesources[k]['id'];
                     for (var j = 0; j < bothCurr.length; j++) {
                         var currencyName = $.grep(currencies, function (v) {
                             return v.id === bothCurr[j];
                         })[0]['value'];
-                    
+
                         columngroups.push({
-                            text: financesources[k]['value']+' - '+currencyName + ' (Million)',
+                            text: financesources[k]['value'] + ' - ' + currencyName + ' (Million)',
                             align: 'center',
-                            name: fid+currencyName
+                            name: fid + currencyName
                         });
                         cols.push({
-                            name: 'DD_' + bothCurr[j]+'_'+fid,
-                            columngroup: fid+currencyName,
-                            map: 'DD_' + bothCurr[j]+'_'+fid,
+                            name: 'DD_' + bothCurr[j] + '_' + fid,
+                            columngroup: fid + currencyName,
+                            map: 'DD_' + bothCurr[j] + '_' + fid,
                             text: 'Drawdowns'
                         });
                         cols.push({
-                            name: 'Bal_'+bothCurr[j]+'_'+fid,
-                            columngroup: fid+currencyName,
-                            map: 'Bal_'+bothCurr[j]+'_'+fid,
+                            name: 'Bal_' + bothCurr[j] + '_' + fid,
+                            columngroup: fid + currencyName,
+                            map: 'Bal_' + bothCurr[j] + '_' + fid,
                             text: 'Balance'
                         });
                         cols.push({
-                            name: 'Int_'+bothCurr[j]+'_'+fid,
-                            columngroup: fid+currencyName,
-                            map: 'Int_'+bothCurr[j]+'_'+fid,
+                            name: 'Int_' + bothCurr[j] + '_' + fid,
+                            columngroup: fid + currencyName,
+                            map: 'Int_' + bothCurr[j] + '_' + fid,
                             text: 'Interest'
                         });
                         cols.push({
-                            name: 'Repy_'+bothCurr[j]+'_'+fid,
-                            columngroup: fid+currencyName,
-                            map: 'Repy_'+bothCurr[j]+'_'+fid,
+                            name: 'Repy_' + bothCurr[j] + '_' + fid,
+                            columngroup: fid + currencyName,
+                            map: 'Repy_' + bothCurr[j] + '_' + fid,
                             text: 'Repayment'
                         });
                     }
-        }
-    }
+                }
+            }
         break;
         case "8.3.":
-            for(var k=0; k<financesources.length; k++){
-                if(financesources[k]['type']=='E'){
-                    var fid=financesources[k]['id'];
+            for (var k = 0; k < financesources.length; k++) {
+                if (financesources[k]['type'] == 'E') {
+                    var fid = financesources[k]['id'];
                     columngroups.push({
-                        text: financesources[k]['value']+' (Million)',
+                        text: financesources[k]['value'] + ' (Million)',
                         align: 'center',
                         name: fid
                     });
@@ -147,26 +172,26 @@ function showData(results) {
                         text: 'Drawdowns'
                     });
                     cols.push({
-                        name: 'BLC_'+fid,
+                        name: 'BLC_' + fid,
                         columngroup: fid,
-                        map: 'BLC_'+fid,
+                        map: 'BLC_' + fid,
                         text: 'Balance'
                     });
                     cols.push({
-                        name: 'ILC_'+fid,
+                        name: 'ILC_' + fid,
                         columngroup: fid,
-                        map: 'ILC_'+fid,
+                        map: 'ILC_' + fid,
                         text: 'Interest'
                     });
                     cols.push({
-                        name: 'RLC_'+fid,
+                        name: 'RLC_' + fid,
                         columngroup: fid,
-                        map: 'RLC_'+fid,
+                        map: 'RLC_' + fid,
                         text: 'Repayment'
                     });
                 }
             }
-        break;
+            break;
 
         case "8.4.":
             for (var j = 0; j < curTypeSel.length; j++) {
@@ -174,7 +199,7 @@ function showData(results) {
                     return v.id === curTypeSel[j];
                 })[0]['value'];
                 columngroups.push({
-                    text: currencyName+' (Million)',
+                    text: currencyName + ' (Million)',
                     align: 'center',
                     name: currencyName
                 });
@@ -185,25 +210,25 @@ function showData(results) {
                     text: 'Drawdowns'
                 });
                 cols.push({
-                    name: 'B_'+curTypeSel[j],
+                    name: 'B_' + curTypeSel[j],
                     columngroup: currencyName,
-                    map: 'B_'+curTypeSel[j],
+                    map: 'B_' + curTypeSel[j],
                     text: 'Balance'
                 });
                 cols.push({
-                    name: 'I_'+curTypeSel[j],
+                    name: 'I_' + curTypeSel[j],
                     columngroup: currencyName,
-                    map: 'I_'+curTypeSel[j],
+                    map: 'I_' + curTypeSel[j],
                     text: 'Interest'
                 });
                 cols.push({
-                    name: 'R_'+curTypeSel[j],
+                    name: 'R_' + curTypeSel[j],
                     columngroup: currencyName,
-                    map: 'R_'+curTypeSel[j],
+                    map: 'R_' + curTypeSel[j],
                     text: 'Repayment'
                 });
             }
-        break;
+            break;
 
         case "8.5.":
             cols.push({
@@ -226,12 +251,8 @@ function showData(results) {
                 map: 'RLC',
                 text: 'Repayment'
             });
-        break;
+            break;
     }
-    if(columngroups.length==0){
-        CreateGrid(cols, getexportcredits(results));
-    }else{
-        CreateGrid(cols, getexportcredits(results), columngroups);
-    }
-   
+    CreateGrid(cols, getexportcredits(results), columngroups);
+
 }

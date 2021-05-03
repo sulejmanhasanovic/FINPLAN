@@ -11,9 +11,9 @@ function getfinancing(results) {
                 var data = new Array();
                 data['id'] = i;
                 data['item'] = i.toString();
-                data['IL'] = ctdata['IL_' + i];
-                data['CL'] = ctdata['CL_' + i];
-                data['GIL'] = ctdata['GIL_' + i];
+                data['IL'] = checkval(ctdata['IL_' + i]);
+                data['CL'] = checkval(ctdata['CL_' + i]);
+                data['GIL'] = checkval(ctdata['GIL_' + i]);
                 datar.push(data);
             }
             break;
@@ -23,9 +23,9 @@ function getfinancing(results) {
                 var data = new Array();
                 data['id'] = i;
                 data['item'] = i.toString();
-                data['SLL'] = ctdata['SLL_' + i];
-                data['SLOLC'] = ctdata['SLOLC_' + i];
-                data['SLLI'] = ctdata['SLLI_' + i];
+                data['SLL'] = checkval(ctdata['SLL_' + i]);
+                data['SLOLC'] = checkval(ctdata['SLOLC_' + i]);
+                data['SLLI'] = checkval(ctdata['SLLI_' + i]);
                 datar.push(data);
             }
             break;
