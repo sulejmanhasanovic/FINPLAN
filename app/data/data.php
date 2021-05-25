@@ -407,7 +407,7 @@ switch ($id)
 
 if ($action == 'edit')
 {
-    if($_POST["idaction"]=="general_information"){
+    if($_REQUEST["idaction"]=="general_information"){
         $cg = 'geninf_data';
         $dc = new XmlCollection($caseStudyId,$cg);
         $currencies = Config::getData('currencies');
@@ -430,7 +430,7 @@ if ($action == 'edit')
 			}
     }
 
-    switch ($id){
+    switch ($_REQUEST["id"]){
         case 'financialmanager_other':
             $bod->deleteById($_POST['other']['id']);
             unset($_POST['other']['id']);
@@ -489,12 +489,14 @@ if ($action == 'edit')
         break;   
 
         default:
+        if($xml!=null){
             $xml->deleteByField(1, 'sid');
             $xml->add(json_decode($_POST['data'], true));
             
             $dataNotes[$id]=$_POST['datanotes'];
             $json_data = json_encode($dataNotes);
             file_put_contents(USER_CASE_PATH.$caseStudyId."/datanotes.json", $json_data);
+        }
         break;
     }
 }

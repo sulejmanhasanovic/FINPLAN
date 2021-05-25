@@ -60,7 +60,7 @@ function getbalancesheet(results) {
     data['assets'] = 'Receivables (including VAT)';
     data['assetsvalue'] = ctdata['Receivables'];
     data['equity'] = 'Current Maturity';
-    data['equityvalue'] = ctdata['CMBL'];
+    data['equityvalue'] = codata['CMBL'];
     datar.push(data);
 
     var data = new Array();

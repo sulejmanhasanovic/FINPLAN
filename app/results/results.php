@@ -375,7 +375,7 @@
 			$row['item']='Loans drawdowns';
 			$row['chart']=true;
 			for($n = $startYear;$n <= $endYear; $n++){
-				$row[$n]=$loanDrawdown;
+				$row[$n]=$loanDrawdown[$n];
 			}
 			array_push($table,$row);
 			$series[]='Loans drawdowns';
@@ -384,7 +384,7 @@
 			$row['item']='Stand-by facility';
 			$row['chart']=true;
 			for($n = $startYear;$n <= $endYear; $n++){
-				$row[$n]=$gval[$n];
+				$row[$n]=$gVal[$n];
 			}
 			array_push($table,$row);
 			$series[]='Stand-by facility';
@@ -704,7 +704,7 @@
 			$row['item']='Total';
 			$row['chart']=true;
 			for($n = $startYear;$n <= $endYear; $n++){
-				$row[$n]=formatnumber($coData['NFA_'.$n] + $agData['WPL_'.$n] + $coData['R_'.$n] + $cnData['SDBL_'.$n]);
+				$row[$n]=formatnumber($coData['NEOL_'.$n] + $cnData['AREL_'.$n] + $coData['NBOL_'.$n] + $coData['NLOL_'.$n]+ $coData['CDDFL_'.$n] + $coData['CML_'.$n]);
 			}
 			array_push($table,$row);
 			$series[]='Total';
@@ -736,7 +736,7 @@
 				$row['chart']=true;
 				$row[$startYear-1]=formatnumber(0)*(-1);
 				for($n = $startYear;$n <= $endYear; $n++){
-					$row[$n]=formatnumber($cdData['N_'.$n]);
+					$row[$n]=formatnumber($cdData['N_'.$n])*-1;
 				}
 				array_push($table,$row);
 				$series[]='Eq.Increase';
@@ -1015,7 +1015,7 @@
 					$row['item']='Maximum project finance during loan term';
 					$row['chart']=true;
 					for($n = $startYear;$n <= $endYear; $n++){
-						$row[$n]=formatnumber($crData['MFLO_'.$n]);
+						$row[$n]=formatnumber($crData['MFLo_'.$n]);
 					}
 					array_push($table,$row);
 					$series[]='Maximum project finance during loan term';
