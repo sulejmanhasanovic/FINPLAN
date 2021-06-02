@@ -3,28 +3,30 @@
     $.getScript(url);
 </script>
 <ul class="nav nav-tabs">
-	<li role="presentation">
+        <li role="presentation">
+            <a href="#/SalePurchase/sales_sale" id="sales_sale">
+                <span lang="en">Sales data</span>
+            </a>
+        </li>
+        <li role="presentation">
+            <a href="#/SalePurchase/sales_purchase" id="sales_purchase">
+                <span lang="en">Purchase data</span>
+            </a>
+        </li>
+    <li>
 		<a href="#/GetData/sales_consumers" id="sales_consumers">
 			<span lang="en">Consumers contribution and deposits</span>
 		</a>
 	</li>
 	<li role="presentation">
 		<a href="#/GetData/sales_revenues" id="sales_revenues">
-			<span lang="en">Fixed revenues and other Income</span>
-		</a>
-	</li>
-	<li role="presentation">
-		<a href="#/SalePurchase/sales_sale" id="sales_sale">
-			<span lang="en">Sales data</span>
-		</a>
-	</li>
-	<li role="presentation">
-		<a href="#/SalePurchase/sales_purchase" id="sales_purchase">
-			<span lang="en">Purchase data</span>
+			<span lang="en">Fixed revenues and other income</span>
 		</a>
 	</li>
 </ul>
 <div style="padding-top:10px"></div>
+<input type="hidden" id="producttypeid" value="E">
+<input type="hidden" id="perunitid" value="">
     <div class="card">
         <div class="cardtitle backwhite">
             <span lang="en">Sales data</span>   

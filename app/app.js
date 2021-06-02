@@ -280,8 +280,9 @@ function CreateGrid(cols, result, columngroups) {
         columnsresize : true,
         columns: plcolumns,
         columngroups: columngroups
-
     });
+
+    $("#notevalueentered").show();
 }
 
 function ReadOnlyRow(grid) {
@@ -350,12 +351,12 @@ function setValues(data) {
 }
 
 function onlyDecimal(n) {
-    $('#' + n.id).val(n.value.replace(/[^\d,.]+/g, ''));
+    $('#' + n.id).val(n.value.replace(/[^\d,.-]+/g, ''));
     $('#'+n.id).parent().removeClass('has-error');
 }
 
 function onlyNumber(n) {
-    $('#' + n.id).val(n.value.replace(/[^\d]+/g, ''));
+    $('#' + n.id).val(n.value.replace(/[^\d-]+/g, ''));
     $('#'+n.id).parent().removeClass('has-error');
 }
 
@@ -366,7 +367,7 @@ function maxValue(n, value) {
     }else{
         $('#' + n.id).removeClass("error-text");
     }
-    $('#' + n.id).val(n.value.replace(/[^\d,.]+/g, ''));
+    $('#' + n.id).val(n.value.replace(/[^\d,.-]+/g, ''));
     $('#'+n.id).parent().removeClass('has-error');
 }
 
@@ -395,7 +396,7 @@ var tabs = [];
 tabs['general'] = ['general_information', 'general_inflation', 'general_exchangerate'];
 tabs['taxation'] = ['taxation_depreciation', 'taxation_royalty'];
 tabs['balancesheet'] = ['balancesheet_initial', 'balancesheet_oldloans', 'balancesheet_oldbonds', 'balancesheet_investment'];
-tabs['sales'] = ['sales_consumers', 'sales_revenues', 'sales_sale', 'sales_purchase'];
+tabs['sales'] = ['sales_sale', 'sales_purchase', 'sales_consumers', 'sales_revenues'];
 tabs['plantoperation'] = ['plantoperation_general', 'plantoperation_production', 'plantoperation_costs',
     'plantoperation_fuel', 'plantoperation_expenses'
 ];
@@ -411,7 +412,7 @@ var translates = [];
 translates['general'] = ['General information', 'Inflation information', 'Currency exchage rates'];
 translates['taxation'] = ['Tax and depreciation information', 'Royalty payment'];
 translates['balancesheet'] = ['Assets and liabilities', 'Old commercial loans', 'Old bonds data', 'Committed investment data'];
-translates['sales'] = ['Consumers contribution and deposits', 'Fixed revenues and other Income', 'Sales data', 'Purchase data'];
+translates['sales'] = ['Sales data','Purchase data','Consumers contribution and deposits', 'Fixed revenues and other income'];
 translates['plantoperation'] = ['Data of the plants in the study', 'Production data', 'Operation and maintenance costs',
     'Fuel cost information', 'General expenses data'
 ];
@@ -420,4 +421,4 @@ translates['plantsourcesfinancing'] = ['plantinvestment_investment'];
 translates['planttermsfinancing'] = ['Export credit 1', 'Export credit 2', 'Project loans'];
 translates['plantdepreciation'] = ['Depreciation', 'Decommissioning cost'];
 translates['financialmanager'] = ['Equity', 'New commercial loans', 'New Bonds', 'Other financial data'];
-translates['plant'] = ['Plant data', 'Plant production', 'Operation & Maintenance costs', 'Fuel cost information', 'General expenses data', 'Investment cost in constant prices', 'Depreciation', 'Decommissioning', 'Source of financing']
+translates['plant'] = ['Plant data', 'Plant production', 'Operation & Maintenance costs', 'Fuel cost information', 'General expenses data', 'Investment cost in constant prices', 'Depreciation', 'Decommissioning', 'Sources of financing']

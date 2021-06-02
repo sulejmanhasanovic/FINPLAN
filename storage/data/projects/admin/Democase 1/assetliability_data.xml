@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <assetliability_data>
-	<meta>
-		<autoIncrement>4</autoIncrement>
-	</meta>
-	<data>
-		
-	<row><id>4</id><GrossFixedAssets>1</GrossFixedAssets><LessDepreciation>2</LessDepreciation><ConsumerContribution>3</ConsumerContribution><NetFxdAsst>2</NetFxdAsst><WorkProgress>4</WorkProgress><Receivables>5</Receivables><ShortTermDeposits>6</ShortTermDeposits><Equity>7</Equity><RetainedEarning>8</RetainedEarning><ConsumerDeposits>9</ConsumerDeposits><Currentmaturity>10</Currentmaturity><OptionReEvaluation>Y</OptionReEvaluation><TaxableReEvaluation>11</TaxableReEvaluation><sid>1</sid></row></data>
+  <meta>
+    <autoIncrement>4</autoIncrement>
+  </meta>
+  <data>
+    
+  <row><id>4</id><GrossFixedAssets>5</GrossFixedAssets><Equity>5</Equity><LessDepreciation>0</LessDepreciation><RetainedEarning>4</RetainedEarning><ConsumerContribution>0</ConsumerContribution><NetFxdAsst>5</NetFxdAsst><WorkProgress>8</WorkProgress><ConsumerDeposits>9</ConsumerDeposits><Receivables>1</Receivables><Currentmaturity>1</Currentmaturity><ShortTermDeposits>11</ShortTermDeposits><OptionReEvaluation>Y</OptionReEvaluation><TaxableReEvaluation>123</TaxableReEvaluation><sid>1</sid></row></data>
 </assetliability_data>

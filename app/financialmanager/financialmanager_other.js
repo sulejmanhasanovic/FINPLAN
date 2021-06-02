@@ -2,6 +2,14 @@ var url = "app/data/data.php";
 //get data
 function showData(results) {
     $("#additionalData").load("app/financialmanager/financialmanager_other.html", function () {
+        var currencies = results['currencies'];
+        var baseCurrency = results['baseCurrency'];
+        var baseCurrencyName = $.grep(currencies, function (v) {
+            return v.id === baseCurrency;
+        })[0]['value'];
+
+        $("#currencylabel").html(" (Million "+baseCurrencyName+")");
+
         $("#chartGrid").hide();
         $("#decDown").hide();
         $("#decUp").hide();
@@ -10,6 +18,7 @@ function showData(results) {
         var cfData = results['cfData'];
         var sfData = results['sfData'];
         var bnData = results['bnData'];
+
         $('#cfid').val(cfData.id);
         $('#STDeposit').val(cfData.STDeposit);
         $('#SBFacility').val(cfData.SBFacility);

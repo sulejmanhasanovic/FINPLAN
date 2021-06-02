@@ -1,2 +1,2 @@
 <?xml version="1.0" encoding="utf-8"?>
-<depreciation_data><meta><autoIncrement>7</autoIncrement></meta><data><row><id>6</id><Type>DS</Type><DecliningYears>10</DecliningYears><DecliningRate>40</DecliningRate><pid>1</pid></row></data></depreciation_data>
+<depreciation_data><meta><autoIncrement>6</autoIncrement></meta><data><row><id>6</id><Type>DS</Type><DecliningYears>10</DecliningYears><DecliningRate>40</DecliningRate><pid>1</pid></row></data></depreciation_data>

@@ -1,9 +1,10 @@
 <br />
+<div id="perunits"></div>
 <div class="row">
     <div class="col-md-6">
         <input type='hidden' id='id' value='' />
         <div lang="en">Product name and units</div>
-        <select name="Name" id="Name" class="form-control">
+        <select name="Name" id="Name" class="form-control" onchange="changeProductType()">
         </select>
         <br />
         <div>
@@ -31,7 +32,7 @@
             disabled />
         <br />
         <div>
-            <div lang="en">Price for first year</div>
+            <div lang="en">Price for first year (<span id="perUnit"></span>)</div>
             <input type='text' class='form-control' id='PriceBase' autocomplete="off" onkeyup="onlyDecimal(this)" />
         </div>
     </div>
@@ -45,16 +46,16 @@
         <br />
         <span class='pure-radiobutton' style='padding-right:25px'>
             <input type='radio' name='Price' class='basic' id='CP' value='CP' onclick='setPriceType(this.id, true)' />
-            <label for='CP'> <span lang='en'>Yearly current price</span></label>
+            <label for='CP'> <span lang='en' id="CPlabel">Yearly current price</span></label>
         </span>
         <span class='pure-radiobutton' style='padding-right:25px'>
             <input type='radio' name='Price' class='basic' id='YC' value='YC' onclick='setPriceType(this.id, true)' />
-            <label for='YC'> <span lang='en'>Yearly Price change in addition to inflation (%)</span></label>
+            <label for='YC'> <span lang='en' id="YClabel">Yearly price change in addition to inflation (%)</span></label>
         </span>
         <span class='pure-radiobutton' style='padding-right:25px'>
             <input type='radio' name='Price' class='basic' id='SC' value='SC' onclick='setPriceType(this.id, false)'
                 checked />
-            <label for='SC'> <span lang='en'>Standard Change in Addition to Inflation (%)</span></label>
+            <label for='SC'> <span lang='en' id="SClabel">Standard change in addition to inflation (%)</span></label>
             <input type='text' class='form-control' id='PriceFixed' autocomplete="off" onkeyup="onlyDecimal(this)" />
         </span>
     </div>

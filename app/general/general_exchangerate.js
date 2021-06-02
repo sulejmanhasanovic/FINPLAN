@@ -65,7 +65,7 @@ function showData(results) {
                 if (yearlyrate === undefined)
                     yearlyrate = "";
 
-                tblcontrols += "<td class='box-shadow card backwhite'><b>" + baseCurrencyName + "(" + currencyName + ") (%)</b><br/> \
+                tblcontrols += "<td class='box-shadow card backwhite'><b>" + baseCurrencyName + " (" + currencyName + ") (%)</b><br/> \
         <div class='row'> \
          <div class='col-md-6'> \
              <span class='pure-radiobutton'> \
@@ -78,7 +78,7 @@ function showData(results) {
          </div> \
          <span class='pure-radiobutton'> \
          <input type='radio' id='II" + curTypeSel[j] + "' name='RateType" + curTypeSel[j] + "'  " + checkedII + " value='II' onclick='setRateType(this.id,false)'/><label for='II" + curTypeSel[j] + "'>Exchange Rate Reflects Inflation Rates</label> \
-     </span> <br/>\
+     </span> <div style='height:7px'></div>\
         <span class='pure-radiobutton'> \
              <input type='radio' id='YR" + curTypeSel[j] + "' name='RateType" + curTypeSel[j] + "'  " + checkedYR + " value='YR' onclick='setRateType(this.id,true)'/><label for='YR" + curTypeSel[j] + "'>Yearly Exchange Rate</label> \
          </span> \
@@ -89,7 +89,7 @@ function showData(results) {
                     editable: editable,
                     cellclassname: cellclassname,
                     map: curTypeSel[j],
-                    text: baseCurrencyName + '(' + currencyName + ')'
+                    text: baseCurrencyName + ' (' + currencyName + ')'
                 });
             }
             $("#controls").append(tblcontrols);
@@ -111,7 +111,7 @@ function setRateType(input, editable) {
     }
     if (input.substring(0, 2) == "II") {
         $('#YearlyRate' + column).prop('disabled', 'disabled');
-        $('#gsFlexGrid').jqxGrid('setcolumnproperty', column, 'editable', false);
-        $('#gsFlexGrid').jqxGrid('setcolumnproperty', column, 'cellclassname', 'readonly');
+        $('#gsFlexGrid').jqxGrid('setcolumnproperty', column, 'editable', true);
+        $('#gsFlexGrid').jqxGrid('setcolumnproperty', column, 'cellclassname', '');
     }
 }

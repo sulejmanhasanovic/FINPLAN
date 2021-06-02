@@ -38,11 +38,11 @@ function showData(results) {
             cols.push({
                 name: bothCurr[j],
                 map: bothCurr[j],
-                text: currencyName,
+                text: currencyName + " (% distribution)",
                 editable: true
             });
 
-            tblcontrols += "<td class='box-shadow card backwhite'><b>" + currencyName + "</b><br/> \
+            tblcontrols += "<td class='box-shadow card backwhite'><b>" + currencyName + " (Million)</b><br/> \
             <input id='Tot_" + bothCurr[j] + "' type='text' class='form-control' autocomplete='off' onkeyup='onlyDecimal(this)' value='" + check(cfdata['Tot_'+bothCurr[j]]) + "'/> \
             </td><td style='width:5px'></td>";
         }

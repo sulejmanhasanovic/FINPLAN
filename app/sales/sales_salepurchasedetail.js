@@ -9,13 +9,21 @@ function showData(results) {
         var currencies = results['currencies'];
         var producttypes = results["producttypes"];
         var curtypesell = results['bothCurrBase'].split(",");
-
+        $("#perUnit").html($("#perunitid").val());
+        var selected="";
         var product = "";
+        var perunits="";
         for (var i = 0; i < producttypes.length; i++) {
-            product += "<option value=" + producttypes[i]["id"] + ">" + producttypes[i]["value"] + " (" + producttypes[i]["unit"] + ")</option>"
+            selected="";
+            if(producttypes[i]["id"]==$("#producttypeid").val())
+                selected='selected';
+            product += "<option value=" + producttypes[i]["id"] + " "+selected+">" + producttypes[i]["value"] + " (" + producttypes[i]["unit"] + ")</option>";
+            perunits += "<input type='hidden' id='"+producttypes[i]["id"]+"_perunit' value='"+producttypes[i]["sunit"]+"' />";
+
         }
         $("#Name").html("");
         $("#Name").append(product);
+        $("#perunits").append(perunits);
 
         var curr = "";
         for (var k = 0; k < curtypesell.length; k++) {
@@ -61,11 +69,17 @@ function showData(results) {
                 $("#AmountFixed").removeAttr("disabled");
             }
 
+            var columntext=$("#"+data['Price']+"label").html();
+
             if (data['Price'] == "SC") {
                 editablePri = false;
                 cellclassnamePri = "readonly";
             } else {
                 $("#PriceFixed").prop("disabled", "disabled");
+            }
+
+            if (data['Price'] == "CP") {
+                columntext+=" ("+$("#TradeCurrency :selected").text()+" "+$("#perUnit").html()+")";
             }
         }
 
@@ -80,7 +94,7 @@ function showData(results) {
         cols.push({
             name: 'Pri',
             map: 'Pri',
-            text: 'Yearly Price Change in Addition to Inflation (%)',
+            text: columntext,
             editable: editablePri,
             cellclassname: cellclassnamePri
         });
@@ -164,4 +178,14 @@ function setPriceType(input, editable) {
     } else {
         $('#PriceFixed').removeAttr('disabled');
     }
+
+    var columntext=$("#"+input+"label").html();
+    if(input=='CP')
+        columntext+=" ("+$("#TradeCurrency :selected").text()+" "+$("#perUnit").html()+")";
+
+    $("#gsFlexGrid").jqxGrid('setcolumnproperty', column, 'text', columntext);
+}
+
+function changeProductType(){
+    $("#perUnit").html($("#"+$("#Name").val()+"_perunit").val());
 }

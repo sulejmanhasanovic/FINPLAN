@@ -16,6 +16,7 @@ function getDataSalesPurchases() {
         success: function (results) {
             $("#tblsales tbody").html("");
             var res = JSON.parse(results);
+            console.log(res);
             var salespurchase = res['ctData'];
             var producttypes = res['producttypes'];
             var currencies = res['currencies'];
@@ -35,7 +36,7 @@ function getDataSalesPurchases() {
                 })[0]['value'];
 
                 $("#tblsales tbody").append("<tr>\
-                <td><a class='pointer' id='salepurchase_detail" + salespurchase[i].id + "' onclick='getDataSalePurchase(" + salespurchase[i].id + ")'><i class='material-icons btnblue' data-lang-content='false' data-toggle='tooltip' lang='en' data-placement='top' title='' data-original-title='Edit'>edit</i></a></td>\
+                <td><a class='pointer' id='salepurchase_detail" + salespurchase[i].id + "' onclick='getDataSalePurchase(" + salespurchase[i].id + ", \""+row['id']+"\",\""+perunit+"\")'><i class='material-icons btnblue' data-lang-content='false' data-toggle='tooltip' lang='en' data-placement='top' title='' data-original-title='Edit'>edit</i></a></td>\
                 <td>" + name + "</td>\
                 <td>" + salespurchase[i].ClientName + "</td>\
                 <td>" + currencyName + "</td>\
@@ -48,20 +49,20 @@ function getDataSalesPurchases() {
     })
 }
 
-function getDataSalePurchase(id) {
+function getDataSalePurchase(id, producttype, perunit) {
     Cookies("salepurchaseid", id);
     Cookies("id", "sales_salepurchasedetail");
     $("#salepurchasecontent").load('app/data/data.html', function () {
         $("#tabs").hide();
         $("#gridTitle").html("Details");
         $("#savedata").attr("onclick", "saveDataSalePurchase()");
+        $("#producttypeid").val(producttype);
+        $("#perunitid").val(perunit);
     });
     if (id != 0) {
         var thisClosest = $("#salepurchase_detail" + id).closest('tr');
         thisClosest.addClass("readonly1").siblings().removeClass("readonly1");
     }
-
-
 }
 
 function deleteSalePurchase(id) {

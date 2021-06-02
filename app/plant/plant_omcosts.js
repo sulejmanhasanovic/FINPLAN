@@ -35,7 +35,7 @@ function showData(results) {
         cols.push({
             name: bothCurr[j],
             map: bothCurr[j],
-            text: currencyName,
+            text: currencyName + " (Million)",
             editable: true
         });
     }

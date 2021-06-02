@@ -1,9 +1,2 @@
 <?xml version="1.0" encoding="utf-8"?>
-<project_data>
-	<meta>
-		<autoIncrement>9</autoIncrement>
-	</meta>
-	<data>
-
-	<row><id>9</id><sid>1</sid><DRate>7</DRate><Loan_Term>8</Loan_Term><Security_ratio1>9</Security_ratio1><Life_Term>10</Life_Term><Security_ratio2>11</Security_ratio2><FY_Cash_DebtService>12</FY_Cash_DebtService></row></data>
-</project_data>
+<project_data><meta><autoIncrement>1</autoIncrement></meta><data><row><id>1</id><DRate>4</DRate><Loan_Term>10</Loan_Term><Security_ratio1>1.3</Security_ratio1><Life_Term>30</Life_Term><Security_ratio2>1.3</Security_ratio2><FY_Cash_DebtService>2017</FY_Cash_DebtService><sid>1</sid></row></data></project_data>

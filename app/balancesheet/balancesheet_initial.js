@@ -13,5 +13,5 @@ function showData(results) {
 
 function calculateNetFxdAsst(n){
     $("#NetFxdAsst").val( ($("#GrossFixedAssets").val()*1) - ($("#LessDepreciation").val()*1) + ($("#ConsumerContribution").val()*1));
-    $('#' + n.id).val(n.value.replace(/[^\d,]+/g, ''));
+    $('#' + n.id).val(n.value.replace(/[^\d,-]+/g, ''));
 }

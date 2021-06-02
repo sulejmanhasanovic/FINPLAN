@@ -1,10 +1,2 @@
 <?xml version="1.0" encoding="utf-8"?>
-<inflation_data>
-	<meta>
-		<autoIncrement>13</autoIncrement>
-	</meta>
-	<data>
-
-		
-	<row><id>13</id><RateTypeALL>YR</RateTypeALL><RateTypeDZD>YR</RateTypeDZD><RateTypeMYR>SR</RateTypeMYR><SteadyInf_MYR>5</SteadyInf_MYR><sid>1</sid><ALL_2012>12</ALL_2012><DZD_2012>88</DZD_2012></row></data>
-</inflation_data>
+<inflation_data><meta><autoIncrement>3</autoIncrement></meta><data><row><id>3</id><DZD_2012>1</DZD_2012><RateTypeDZD>YR</RateTypeDZD><DZD_2013>22</DZD_2013><DZD_2014></DZD_2014><DZD_2015></DZD_2015><DZD_2016></DZD_2016><DZD_2017></DZD_2017><DZD_2018></DZD_2018><DZD_2019></DZD_2019><DZD_2020></DZD_2020><DZD_2021></DZD_2021><DZD_2022></DZD_2022><DZD_2023></DZD_2023><DZD_2024></DZD_2024><DZD_2025></DZD_2025><DZD_2026></DZD_2026><DZD_2027></DZD_2027><DZD_2028></DZD_2028><DZD_2029></DZD_2029><DZD_2030></DZD_2030><DZD_2031></DZD_2031><DZD_2032></DZD_2032><DZD_2033></DZD_2033><DZD_2034></DZD_2034><DZD_2035></DZD_2035><DZD_2036></DZD_2036><DZD_2037></DZD_2037><DZD_2038></DZD_2038><DZD_2039></DZD_2039><DZD_2040></DZD_2040><DZD_2041></DZD_2041><DZD_2042></DZD_2042><DZD_2043></DZD_2043><DZD_2044></DZD_2044><DZD_2045></DZD_2045><ALL_2012>1</ALL_2012><RateTypeALL>SR</RateTypeALL><SteadyInf_ALL>2</SteadyInf_ALL><MYR_2012>5.5</MYR_2012><RateTypeMYR>SR</RateTypeMYR><SteadyInf_MYR>4</SteadyInf_MYR><sid>1</sid></row></data></inflation_data>
