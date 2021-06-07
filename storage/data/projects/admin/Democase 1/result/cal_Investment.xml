@@ -7,81 +7,81 @@
     <row>
       <id>1</id>
       <pid>1</pid>
-      <PW_1>546.8359163904</PW_1>
-      <EI_DZD_2013>0</EI_DZD_2013>
-      <C_1>155.7504</C_1>
-      <EI_DZD_2014>0</EI_DZD_2014>
-      <C_2>161.980416</C_2>
-      <EI_DZD_2015>0</EI_DZD_2015>
-      <C_3>112.30642176</C_3>
-      <EI_DZD_2016>0</EI_DZD_2016>
-      <C_4>116.7986786304</C_4>
+      <PW_1>0</PW_1>
       <EI_ALL_2013>0</EI_ALL_2013>
+      <C_1>0</C_1>
       <EI_ALL_2014>0</EI_ALL_2014>
+      <C_2>0</C_2>
       <EI_ALL_2015>0</EI_ALL_2015>
+      <C_3>0</C_3>
       <EI_ALL_2016>0</EI_ALL_2016>
-      <EI_MYR_2013>144</EI_MYR_2013>
-      <EI_MYR_2014>144</EI_MYR_2014>
-      <EI_MYR_2015>96</EI_MYR_2015>
-      <EI_MYR_2016>96</EI_MYR_2016>
+      <C_4>0</C_4>
+      <EI_DZD_2013>0</EI_DZD_2013>
+      <EI_DZD_2014>0</EI_DZD_2014>
+      <EI_DZD_2015>0</EI_DZD_2015>
+      <EI_DZD_2016>0</EI_DZD_2016>
+      <EI_TRY_2013>0</EI_TRY_2013>
+      <EI_TRY_2014>0</EI_TRY_2014>
+      <EI_TRY_2015>0</EI_TRY_2015>
+      <EI_TRY_2016>0</EI_TRY_2016>
     </row>
     <row>
       <id>2</id>
       <pid>2</pid>
       <PW_2>0</PW_2>
-      <EI_DZD_2020>0</EI_DZD_2020>
-      <C_1>0</C_1>
-      <EI_DZD_2021>0</EI_DZD_2021>
-      <C_2>0</C_2>
-      <EI_DZD_2022>0</EI_DZD_2022>
-      <C_3>0</C_3>
-      <EI_DZD_2023>0</EI_DZD_2023>
-      <C_4>0</C_4>
-      <EI_DZD_2024>0</EI_DZD_2024>
-      <C_5>0</C_5>
-      <EI_DZD_2025>0</EI_DZD_2025>
-      <C_6>0</C_6>
-      <EI_DZD_2026>0</EI_DZD_2026>
-      <C_7>0</C_7>
-      <EI_DZD_2027>0</EI_DZD_2027>
-      <C_8>0</C_8>
-      <EI_DZD_2028>0</EI_DZD_2028>
-      <C_9>0</C_9>
-      <EI_DZD_2029>0</EI_DZD_2029>
-      <C_10>0</C_10>
       <EI_ALL_2020>0</EI_ALL_2020>
+      <C_1>0</C_1>
       <EI_ALL_2021>0</EI_ALL_2021>
+      <C_2>0</C_2>
       <EI_ALL_2022>0</EI_ALL_2022>
+      <C_3>0</C_3>
       <EI_ALL_2023>0</EI_ALL_2023>
+      <C_4>0</C_4>
       <EI_ALL_2024>0</EI_ALL_2024>
+      <C_5>0</C_5>
       <EI_ALL_2025>0</EI_ALL_2025>
+      <C_6>0</C_6>
       <EI_ALL_2026>0</EI_ALL_2026>
+      <C_7>0</C_7>
       <EI_ALL_2027>0</EI_ALL_2027>
+      <C_8>0</C_8>
       <EI_ALL_2028>0</EI_ALL_2028>
+      <C_9>0</C_9>
       <EI_ALL_2029>0</EI_ALL_2029>
-      <EI_MYR_2020>0</EI_MYR_2020>
-      <EI_MYR_2021>0</EI_MYR_2021>
-      <EI_MYR_2022>0</EI_MYR_2022>
-      <EI_MYR_2023>0</EI_MYR_2023>
-      <EI_MYR_2024>0</EI_MYR_2024>
-      <EI_MYR_2025>0</EI_MYR_2025>
-      <EI_MYR_2026>0</EI_MYR_2026>
-      <EI_MYR_2027>0</EI_MYR_2027>
-      <EI_MYR_2028>0</EI_MYR_2028>
-      <EI_MYR_2029>0</EI_MYR_2029>
+      <C_10>0</C_10>
+      <EI_DZD_2020>0</EI_DZD_2020>
+      <EI_DZD_2021>0</EI_DZD_2021>
+      <EI_DZD_2022>0</EI_DZD_2022>
+      <EI_DZD_2023>0</EI_DZD_2023>
+      <EI_DZD_2024>0</EI_DZD_2024>
+      <EI_DZD_2025>0</EI_DZD_2025>
+      <EI_DZD_2026>0</EI_DZD_2026>
+      <EI_DZD_2027>0</EI_DZD_2027>
+      <EI_DZD_2028>0</EI_DZD_2028>
+      <EI_DZD_2029>0</EI_DZD_2029>
+      <EI_TRY_2020>0</EI_TRY_2020>
+      <EI_TRY_2021>0</EI_TRY_2021>
+      <EI_TRY_2022>0</EI_TRY_2022>
+      <EI_TRY_2023>0</EI_TRY_2023>
+      <EI_TRY_2024>0</EI_TRY_2024>
+      <EI_TRY_2025>0</EI_TRY_2025>
+      <EI_TRY_2026>0</EI_TRY_2026>
+      <EI_TRY_2027>0</EI_TRY_2027>
+      <EI_TRY_2028>0</EI_TRY_2028>
+      <EI_TRY_2029>0</EI_TRY_2029>
     </row>
     <row>
       <id>3</id>
       <pid>3</pid>
       <PW_3>0</PW_3>
-      <EI_DZD_2018>0</EI_DZD_2018>
-      <C_1>0</C_1>
-      <EI_DZD_2019>0</EI_DZD_2019>
-      <C_2>0</C_2>
       <EI_ALL_2018>0</EI_ALL_2018>
+      <C_1>0</C_1>
       <EI_ALL_2019>0</EI_ALL_2019>
-      <EI_MYR_2018>0</EI_MYR_2018>
-      <EI_MYR_2019>0</EI_MYR_2019>
+      <C_2>0</C_2>
+      <EI_DZD_2018>0</EI_DZD_2018>
+      <EI_DZD_2019>0</EI_DZD_2019>
+      <EI_TRY_2018>0</EI_TRY_2018>
+      <EI_TRY_2019>0</EI_TRY_2019>
     </row>
   </data>
 </cal_Investment>

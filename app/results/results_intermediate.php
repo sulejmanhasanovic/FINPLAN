@@ -157,7 +157,7 @@
 
 		case "7.1.":
 		case "7.2.":
-			$ccd = new XmlData($caseStudyId,$cixml);
+			$ccd = new XmlData($caseStudyId,$ccxml);
 			$data = $ccd->getByField(1,'sid');
 			$results['allyears']=$AllYear;
 			$results['results']=$data;

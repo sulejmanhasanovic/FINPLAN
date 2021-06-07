@@ -228,7 +228,7 @@ function getcontenttable() {
         },
         {
             'id': '6.4.',
-            'title': 'Total project loans'
+            'title': 'Total new loans in local currency'
         }
     ];
     content.push(row);

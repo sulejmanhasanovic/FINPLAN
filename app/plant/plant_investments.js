@@ -48,6 +48,7 @@ function showData(results) {
         }
 
         $("#controls").append(tblcontrols);
-        CreateGrid(cols, getinvestments(results))
+        CreateGrid(cols, getinvestments(results));
+        $("#notevalueentered").hide();
     })
 }

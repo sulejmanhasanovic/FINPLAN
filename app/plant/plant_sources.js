@@ -52,7 +52,7 @@ function showData(results) {
             curr += "<option value=" + bothCurr[k] + " " + selectedcurr + ">" + currencyName + "</option>";
         }
 
-        var tblcontrols = "<tr><td class='box-shadow card backwhite'><select id='cid' class='form-control' onchange='getDataPlant(\"plant_sources\",this.value)'>" + curr + "</select></td>";
+        var tblcontrols = "<tr><td class='box-shadow card backwhite'><select id='cid' class='form-control' onchange='getDataPlant(\"plant_sources\",this.value)'>" + curr + "</select></td><td style='width:300px'></td>";
 
         var cols = [];
         cols.push({
@@ -83,6 +83,7 @@ function showData(results) {
                     map: financesources[j]['id'],
                     text: fnName,
                     editable: editable,
+                    width:225,
                     cellclassname: editable==false ? 'readonly':''
                 });
                    
@@ -111,6 +112,7 @@ function showData(results) {
                     map: financesources[j]['id'],
                     text: fnName,
                     editable: editable,
+                    width:225,
                     cellclassname: editable==false ? 'readonly':''
                 });
 
@@ -128,6 +130,7 @@ function showData(results) {
         tblcontrols += "</tr>";
         $("#controls tbody").append(tblcontrols);
         CreateGrid(cols, getsources(results));
+        $("#notevalueentered").hide();
     });
 }
 
