@@ -262,7 +262,8 @@ function CreateGrid(cols, result, columngroups) {
             cellsformat: decimal,
             columntype: 'numberinput',
             cellsrenderer: cellsrenderer,
-            cellclassname: cols[y]['cellclassname']==undefined ? '' :cols[y]['cellclassname']
+            cellclassname: cols[y]['cellclassname']==undefined ? '' :cols[y]['cellclassname'],
+            validation:cols[y]['validation']
         });
     }
 
@@ -420,5 +421,5 @@ translates['plantinvestment'] = ['Investment cost in constant prices'];
 translates['plantsourcesfinancing'] = ['plantinvestment_investment'];
 translates['planttermsfinancing'] = ['Export credit 1', 'Export credit 2', 'Project loans'];
 translates['plantdepreciation'] = ['Depreciation', 'Decommissioning cost'];
-translates['financialmanager'] = ['Equity', 'New commercial loans', 'New Bonds', 'Other financial data'];
+translates['financialmanager'] = ['Equity', 'New commercial loans', 'New bonds', 'Other financial data'];
 translates['plant'] = ['Plant data', 'Plant production', 'Operation & Maintenance costs', 'Fuel cost information', 'General expenses data', 'Investment cost in constant prices', 'Depreciation', 'Decommissioning', 'Sources of financing']

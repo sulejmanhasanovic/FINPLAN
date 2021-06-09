@@ -432,17 +432,23 @@ if ($action == 'edit')
 
     switch ($_REQUEST["id"]){
         case 'financialmanager_other':
-            $bod->deleteById($_POST['other']['id']);
-            unset($_POST['other']['id']);
-            $bod->add($_POST['other']);	
+            $type=$_REQUEST["type"];
+            if($type=='otherfinancial'){
+                $bod->deleteById($_POST['other']['id']);
+                unset($_POST['other']['id']);
+                $bod->add($_POST['other']);	
+            }
 
-            $cqd->deleteById($_POST['shareholders']['id']);
-            unset($_POST['shareholders']['id']);
-            $cqd->add($_POST['shareholders']);
-
-            $bnd->deleteById($_POST['terms']['id']);
-            unset($_POST['terms']['id']);
-            $bnd->add($_POST['terms']);	
+            if($type=='shareholders'){
+                $cqd->deleteById($_POST['other']['id']);
+                unset($_POST['other']['id']);
+                $cqd->add($_POST['other']);
+            }
+            if($type=='terms'){
+                $bnd->deleteById($_POST['other']['id']);
+                unset($_POST['other']['id']);
+                $bnd->add($_POST['other']);	
+            }
         break;
 
         case 'plant_production':

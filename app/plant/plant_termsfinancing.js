@@ -60,6 +60,7 @@ function showData(results) {
             $('#totcp').html(amount);
         }
         setValues(cfdata);
+        $("#btnBack").show();
     })
 }
 

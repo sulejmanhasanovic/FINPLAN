@@ -39,7 +39,13 @@ function showData(results) {
                 name: bothCurr[j],
                 map: bothCurr[j],
                 text: currencyName + " (% distribution)",
-                editable: true
+                editable: true,
+                validation:function (cell, value) {
+                    if (value > 100) {
+                        return { result: false, message: "Max value: 100" };
+                    }
+                    return true;
+                }
             });
 
             tblcontrols += "<td class='box-shadow card backwhite'><b>" + currencyName + " (Million)</b><br/> \
@@ -49,6 +55,6 @@ function showData(results) {
 
         $("#controls").append(tblcontrols);
         CreateGrid(cols, getinvestments(results));
-        $("#notevalueentered").hide();
+        $("#notevalueentered").html("Inflation will be applied to investment costs");
     })
 }

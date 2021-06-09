@@ -91,7 +91,8 @@ function showData(results) {
             <div class='pure-checkbox'> \
             <input type='checkbox' class='basic' id='" + financesources[j]['id'] + "' value='YES' "+checked+" onclick='clickFinanceSource(this)'/> \
             <label for=" + financesources[j]['id'] + "> " + financesources[j]['value'] + "  </label><br/> \
-            <a class='pointer' id='a_" + financesources[j]['id'] + "' style='display:"+display+"' onclick='getDataTerms(\""+financesources[j]['id']+"\")'>(Terms of financing)</a> \
+            <a class='btn btn-primary' id='a_" + financesources[j]['id'] + "' style='display:"+display+"' onclick='getDataTerms(\""+financesources[j]['id']+"\")'> \
+            Terms of financing</a> \
             </div> \
             </td>";
             }

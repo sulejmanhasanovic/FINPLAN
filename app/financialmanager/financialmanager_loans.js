@@ -29,8 +29,8 @@ function showData(results) {
             var currencyName = $.grep(currencies, function (v) {
                 return v.id === bothCurr[j];
             })[0]['value'];
-            var s = ctdata['S_' + bothCurr[j]];
-            var t = ctdata['T_' + bothCurr[j]];
+            var s = check(ctdata['S_' + bothCurr[j]]);
+            var t = check(ctdata['T_' + bothCurr[j]]);
             tblcontrols += "<td class='box-shadow card backwhite'><b>" + currencyName + " (Million)</b><br/> \
             <div class='row'> \
             <div class='col-md-6'> \

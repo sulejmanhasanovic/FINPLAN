@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <cal_depreciation>
   <meta>
-    <autoIncrement>4</autoIncrement>
+    <autoIncrement>3</autoIncrement>
   </meta>
   <data>
     <row>
@@ -24,10 +24,6 @@
     </row>
     <row>
       <id>3</id>
-      <pid>3</pid>
-    </row>
-    <row>
-      <id>4</id>
       <TN_2012>0</TN_2012>
       <TN_2013>0</TN_2013>
       <TN_2014>0</TN_2014>

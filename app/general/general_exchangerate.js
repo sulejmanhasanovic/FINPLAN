@@ -47,14 +47,15 @@ function showData(results) {
                 }
 
                 var checkedII = "";
+                var disabled='';
                 if (cedata["RateType" + curTypeSel[j]] == "II") {
                     checkedII = "checked";
                  //   editable = false;
                  //   cellclassname = "readonly";
-                    disabled = "disabled";
+                 disabled = "disabled";
                 }
 
-                var disabled = "";
+
                 var checkedYR = "";
                 if (cedata["RateType" + curTypeSel[j]] == "YR") {
                     checkedYR = "checked";

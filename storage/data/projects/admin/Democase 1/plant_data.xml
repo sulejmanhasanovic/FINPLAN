@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plant_data>
 	<meta>
-		<autoIncrement>3</autoIncrement>
+		<autoIncrement>11</autoIncrement>
 	</meta>
 	<data>
 		<row>
@@ -9,7 +9,7 @@
 			<name>MCPP</name>
 			<plantType>Lignite (indigenous)</plantType>
 			<Status>Future</Status>
-			<Ownership>IPP</Ownership>
+			<Ownership>Utility</Ownership>
 			<unitSize>5000</unitSize>
 			<FOyear>2017</FOyear>
 			<CPeriod>4</CPeriod>
@@ -28,17 +28,6 @@
 			<Plantlife>5</Plantlife>
 			<CurTypeSel>H,E,W,C</CurTypeSel>
 		</row>
-		<row>
-			<id>3</id>
-			<name>abav</name>
-			<plantType>Nuclear</plantType>
-			<Status>Existing</Status>
-			<Ownership>Utility</Ownership>
-			<unitSize>3</unitSize>
-			<FOyear>2020</FOyear>
-			<CPeriod>2</CPeriod>
-			<Plantlife>2</Plantlife>
-			<CurTypeSel>H</CurTypeSel>
-		</row>
+		
 	</data>
 </plant_data>

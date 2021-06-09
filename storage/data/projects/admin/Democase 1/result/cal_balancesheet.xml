@@ -8,8 +8,8 @@
       <id>1</id>
       <sid>1</sid>
       <Init_Tot_Assets>25</Init_Tot_Assets>
-      <Init_Tot_Liabilities>22</Init_Tot_Liabilities>
-      <Check_Initial_Balance>3</Check_Initial_Balance>
+      <Init_Tot_Liabilities>26</Init_Tot_Liabilities>
+      <Check_Initial_Balance>-1</Check_Initial_Balance>
     </row>
   </data>
 </cal_balancesheet>

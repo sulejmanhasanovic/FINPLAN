@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <cal_balance>
   <meta>
-    <autoIncrement>3</autoIncrement>
+    <autoIncrement>2</autoIncrement>
   </meta>
   <data>
     <row>
@@ -11,10 +11,6 @@
     <row>
       <id>2</id>
       <pid>2</pid>
-    </row>
-    <row>
-      <id>3</id>
-      <pid>3</pid>
     </row>
   </data>
 </cal_balance>

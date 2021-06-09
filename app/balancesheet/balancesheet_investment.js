@@ -41,4 +41,6 @@ function showData(results) {
     cols.push({name:'C_'+baseCurrency, map: 'C_'+baseCurrency, editable:true, text:baseCurrencyName});
     CreateGrid(cols, getinvestment(results));
 
+    $("#notevalueentered").html("Note that it is assumed that inflation/escalation is already accounted for. Therefore, committed investments need to be entered in nominal terms in the year of expenditure.");
+
 }

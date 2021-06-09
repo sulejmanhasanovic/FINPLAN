@@ -31,8 +31,8 @@ function showData(results) {
                 return v.id === bothCurr[j];
             })[0]['value'];
 
-            var er = ctdata['ER_' + bothCurr[j]];
-            var bt = ctdata['BT_' + bothCurr[j]];
+            var er = check(ctdata['ER_' + bothCurr[j]]);
+            var bt = check(ctdata['BT_' + bothCurr[j]]);
             tblcontrols += "<td class='box-shadow card backwhite'><b>" + currencyName + " (Million)</b><br/> \
         <div class='row'> \
          <div class='col-md-6'> \

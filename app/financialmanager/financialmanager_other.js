@@ -14,47 +14,38 @@ function showData(results) {
         $("#decDown").hide();
         $("#decUp").hide();
         $("#exportgrid").hide();
+        $("#savedata").hide();
 
         var cfData = results['cfData'];
         var sfData = results['sfData'];
         var bnData = results['bnData'];
 
         $('#cfid').val(cfData.id);
-        $('#STDeposit').val(cfData.STDeposit);
-        $('#SBFacility').val(cfData.SBFacility);
-        $('#SLInitial').val(cfData.SLInitial);
+        $('#STDeposit').val(check(cfData.STDeposit));
+        $('#SBFacility').val(check(cfData.SBFacility));
+        $('#SLInitial').val(check(cfData.SLInitial));
 
         $('#sfid').val(sfData.id);
-        $('#A_ROR').val(sfData.A_ROR);
-        $('#Disposal_Year').val(sfData.Disposal_Year);
-        $('#D_Rate').val(sfData.D_Rate);
+        $('#A_ROR').val(check(sfData.A_ROR));
+        $('#Disposal_Year').val(check(sfData.Disposal_Year));
+        $('#D_Rate').val(check(sfData.D_Rate));
 
 
         $('#bnid').val(bnData.id);
-        $('#DRate').val(bnData.DRate);
-        $('#Loan_Term').val(bnData.Loan_Term);
-        $('#Security_ratio1').val(bnData.Security_ratio1);
-        $('#Life_Term').val(bnData.Life_Term);
-        $('#Security_ratio2').val(bnData.Security_ratio2);
-        $('#FY_Cash_DebtService').val(bnData.FY_Cash_DebtService);
+        $('#DRate').val(check(bnData.DRate));
+        $('#Loan_Term').val(check(bnData.Loan_Term));
+        $('#Security_ratio1').val(check(bnData.Security_ratio1));
+        $('#Life_Term').val(check(bnData.Life_Term));
+        $('#Security_ratio2').val(check(bnData.Security_ratio2));
+        $('#FY_Cash_DebtService').val(check(bnData.FY_Cash_DebtService));
     })
 }
 
-function saveData() {
+function saveDataOtherFinancial() {
 
     if(!(required("STDeposit", "Spread for short term deposits is required!") &&
     required("SBFacility","Spread for stand-by facility is required!") &&
-    required("SLInitial", "Short loans outstanding initial is required!") &&
-    required("A_ROR", "Approx. average return is required!") &&
-    required("Disposal_Year", "Disposal year is required!") &&
-    required("D_Rate","Discount rate is required!") &&
-    required("DRate", "Discount rate is required!") &&
-    required("Loan_Term", "Average loan term is required!") &&
-    required("Security_ratio1", "Security ratio for loan period is required!") &&
-    required("Life_Term","Expected life of project is required!") &&
-    required("Security_ratio2", "Security Ratio for project life is required!") &&
-    required("FY_Cash_DebtService", "First year of cash to debt service is required!")
-    ))
+    required("SLInitial", "Short loans outstanding initial is required!")))
     return false;
 
     var cfid = $('#cfid').val();
@@ -69,6 +60,34 @@ function saveData() {
         SLInitial: SLInitial
     }
 
+    $.ajax({
+        type: "POST",
+        url: url,
+        data: {
+            other: other,
+            type:'otherfinancial',
+            action: "edit",
+            id: "financialmanager_other"
+        },
+        success: function () {
+            ShowSuccessMessage('Data saved successfully');
+            $('#fgstudyname').removeClass('has-error');
+        },
+        failure: function () {
+            ShowErrorMessage("Error!");
+        }
+    });
+
+}
+
+function saveDataShareholders() {
+
+    if(!(
+    required("A_ROR", "Approx. average return is required!") &&
+    required("Disposal_Year", "Disposal year is required!") &&
+    required("D_Rate","Discount rate is required!")))
+    return false;
+
     var sfid = $('#sfid').val();
     var A_ROR = $('#A_ROR').val();
     var Disposal_Year = $('#Disposal_Year').val();
@@ -80,6 +99,37 @@ function saveData() {
         Disposal_Year: Disposal_Year,
         D_Rate: D_Rate
     }
+
+    $.ajax({
+        type: "POST",
+        url: url,
+        data: {
+            other: shareholders,
+            type:'shareholders',
+            action: "edit",
+            id: "financialmanager_other"
+        },
+        success: function () {
+            ShowSuccessMessage('Data saved successfully');
+            $('#fgstudyname').removeClass('has-error');
+        },
+        failure: function () {
+            ShowErrorMessage("Error!");
+        }
+    });
+
+}
+
+function saveDataTherms() {
+
+    if(!(required("DRate", "Discount rate is required!") &&
+    required("Loan_Term", "Average loan term is required!") &&
+    required("Security_ratio1", "Security ratio for loan period is required!") &&
+    required("Life_Term","Expected life of project is required!") &&
+    required("Security_ratio2", "Security Ratio for project life is required!") &&
+    required("FY_Cash_DebtService", "First year of cash to debt service is required!")
+    ))
+    return false;
 
     var bnid = $('#bnid').val();
     var DRate = $('#DRate').val();
@@ -103,9 +153,8 @@ function saveData() {
         type: "POST",
         url: url,
         data: {
-            other: other,
-            shareholders: shareholders,
-            terms: terms,
+            other: terms,
+            type: 'terms',
             action: "edit",
             id: "financialmanager_other"
         },

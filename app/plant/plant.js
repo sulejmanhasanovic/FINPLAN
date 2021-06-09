@@ -21,6 +21,7 @@ function getData(){
             var plants = Object.keys(plants).map(key => {
                 return plants[key];
             });
+            console.log(plants);
             var curr=res['caseData']['CurTypeSel'].split(",");
     
             for(var i=0; i<plants.length;i++){
@@ -151,6 +152,13 @@ function savePlant(){
       },
         success: function (results) {
             getData();
+            var message="Data saved succefuly";
+            if(object['id']==""){
+                $("#plantcontent").html("");
+                message="Plant added succefuly";
+            }
+            
+            ShowSuccessMessage(message);
         }
     })
 }

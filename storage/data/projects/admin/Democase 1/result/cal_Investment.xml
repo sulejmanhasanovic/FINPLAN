@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <cal_Investment>
   <meta>
-    <autoIncrement>3</autoIncrement>
+    <autoIncrement>2</autoIncrement>
   </meta>
   <data>
     <row>
@@ -69,19 +69,6 @@
       <EI_TRY_2027>0</EI_TRY_2027>
       <EI_TRY_2028>0</EI_TRY_2028>
       <EI_TRY_2029>0</EI_TRY_2029>
-    </row>
-    <row>
-      <id>3</id>
-      <pid>3</pid>
-      <PW_3>0</PW_3>
-      <EI_ALL_2018>0</EI_ALL_2018>
-      <C_1>0</C_1>
-      <EI_ALL_2019>0</EI_ALL_2019>
-      <C_2>0</C_2>
-      <EI_DZD_2018>0</EI_DZD_2018>
-      <EI_DZD_2019>0</EI_DZD_2019>
-      <EI_TRY_2018>0</EI_TRY_2018>
-      <EI_TRY_2019>0</EI_TRY_2019>
     </row>
   </data>
 </cal_Investment>
