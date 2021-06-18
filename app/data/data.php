@@ -474,6 +474,7 @@ if ($action == 'edit')
             $fid=$curr.'_'.$plantid;
             $data['fid']=$fid;
             $data['cid']=$curr;
+            $data['pid']=$plantid;
             unset($data['sid']);
             unset($data['curr']);
             $xml->deleteById($iddata);
